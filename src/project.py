@@ -53,7 +53,7 @@ class Projectile(GameObject):
         return self.hitbox_rect.colliderect(rect)
 
 class Player(GameObject):
-    def __init__(self, path="images\\test_player.png", pos=(100, 360), hb=(20, 20), hp=5, s=200, cdt=0.5):
+    def __init__(self, path="images\\test_player.png", pos=(100, 360), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=200, cdt=0.5):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -61,6 +61,9 @@ class Player(GameObject):
         self.image = pygame.image.load(path).convert_alpha()
         self.draw_rect = self.image.get_rect()
         self.draw_rect.center = (self.pos_x, self.pos_y)
+
+        self.min_y = lim[0] + (self.draw_rect.height / 2)
+        self.max_y = lim[1] - (self.draw_rect.height / 2)
 
         self.hitbox_rect = pygame.Rect((0, 0), hb)
         self.hitbox_rect.center = (self.pos_x, self.pos_y)
@@ -73,10 +76,14 @@ class Player(GameObject):
     def update(self, dt=0, direction=0):
         super().update()
 
-        self.pos_y += (self.speed * direction) * dt
+        projected_y = self.pos_y + ((self.speed * direction) * dt)
+        projected_draw_rect = self.draw_rect.copy()
+        projected_draw_rect.center = (self.pos_x, projected_y)
 
-        self.draw_rect.center = (self.pos_x, self.pos_y)
-        self.hitbox_rect.center = (self.pos_x, self.pos_y)
+        if not projected_draw_rect.top <= self.min_y and not projected_draw_rect.bottom >= self.max_y:
+            self.pos_y = projected_y
+            self.draw_rect.center = (self.pos_x, self.pos_y)
+            self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
         if self.shoot_cooldown <= self.cooldown_time:
             self.shoot_cooldown += dt
@@ -122,7 +129,7 @@ def main():
     clock = pygame.time.Clock()
     delta_time = 0
 
-    player = Player()
+    player = Player(lim=(120, DISPLAY_HEIGHT))
     player_projectiles = []
 
     gksr = GiantKillerSpaceRobot()
