@@ -1,4 +1,5 @@
 import pygame
+import random
 
 DISPLAY_WIDTH, DISPLAY_HEIGHT = (1280, 720)
 
@@ -19,7 +20,7 @@ class GameObject():
         screen.blit(self.image, self.draw_rect)
 
 class Projectile(GameObject):
-    def __init__(self, path="images\\test_projectile.png", pos=(0, 0), hb=(8, 8), s=750, dir=0):
+    def __init__(self, path="images\\test_projectile.png", pos=(0, 0), hb=(8, 8), s=750, dir=0, dmg=1):
         super().__init__()
         self.pos_x, self.pos_y = pos
         
@@ -33,6 +34,7 @@ class Projectile(GameObject):
         self.speed = s
         self.direction = dir
         self.onscreen = True
+        self.damage = dmg
 
     def _is_onscreen(self):
         game_window_rect = pygame.Rect((0,0), (DISPLAY_WIDTH, DISPLAY_HEIGHT))
@@ -80,7 +82,7 @@ class Player(GameObject):
             self.shoot_cooldown += dt
 
 class GiantKillerSpaceRobot(GameObject):
-    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2):
+    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=4):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -95,9 +97,18 @@ class GiantKillerSpaceRobot(GameObject):
         self.speed = s
         self.shoot_cooldown = 0
         self.cooldown_time = cdt
+        self.projectiles_per_wave = init_ppw
+
+        self.projectile_origin_positions = []
+        origin_amounts = 20
+        for x in range(origin_amounts):
+            self.projectile_origin_positions.append((900, self.pos_y + ((hb[1] / origin_amounts) * (x + 1))))
     
-    def update(self):
+    def update(self, dt=0):
         super().update()
+        
+        if self.shoot_cooldown <= self.cooldown_time:
+            self.shoot_cooldown += dt
 
 def main():
     FRAMES_PER_SECOND = 24
@@ -139,23 +150,42 @@ def main():
             player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
             player.shoot_cooldown = 0
         
-        # update gksr
+        gksr.update(delta_time)
+        if gksr.shoot_cooldown >= gksr.cooldown_time:
+            for x in range(gksr.projectiles_per_wave):
+                gksr_projectiles.append(Projectile(pos=random.choice(gksr.projectile_origin_positions), dir=-1))
+            gksr.shoot_cooldown = 0
 
         for index, projectile in enumerate(player_projectiles):
             if projectile.onscreen:
                 if projectile.check_hit(gksr.hitbox_rect):
+                    gksr.hitpoints -= projectile.damage
                     del player_projectiles[index]
-                    # deal damage to gksr
                 else:
                     projectile.update(delta_time)
             else:
                 del player_projectiles[index]
+        
+        for index, projectile in enumerate(gksr_projectiles):
+            if projectile.onscreen:
+                if projectile.check_hit(player.hitbox_rect):
+                    player.hitpoints -= projectile.damage
+                    del gksr_projectiles[index]
+                    print(player.hitpoints)
+                else:
+                    projectile.update(delta_time)
+            else:
+                del gksr_projectiles[index]
 
         screen.fill(pygame.Color(16, 0, 26))
 
         gksr.draw(screen)
         player.draw(screen)
+
         for projectile in player_projectiles:
+            projectile.draw(screen)
+        
+        for projectile in gksr_projectiles:
             projectile.draw(screen)
 
         pygame.display.flip()
