@@ -9,24 +9,26 @@ class GameObject():
 
         self.pos_x, self.pos_y = (5, 5)
         
-        self.rect = pygame.Rect((0, 0), (10, 10))
-        self.rect.center = (self.pos_x, self.pos_y)
+        self.draw_rect = pygame.Rect((0, 0), (10, 10))
+        self.draw_rect.center = (self.pos_x, self.pos_y)
 
     def update(self):
         return
         
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
+        screen.blit(self.image, self.draw_rect)
 
 class Projectile(GameObject):
     def __init__(self, path="images\\test_projectile.png", pos=(0, 0), hb=(8, 8), s=750, dir=0):
         super().__init__()
-        self.image = pygame.image.load(path).convert_alpha()
-
         self.pos_x, self.pos_y = pos
         
-        self.rect = pygame.Rect((0, 0), hb)
-        self.rect.center = (self.pos_x, self.pos_y)
+        self.image = pygame.image.load(path).convert_alpha()
+        self.draw_rect = self.image.get_rect()
+        self.draw_rect.center = (self.pos_x, self.pos_y)
+
+        self.hitbox_rect = pygame.Rect((0, 0), hb)
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
         self.speed = s
         self.direction = dir
@@ -34,7 +36,7 @@ class Projectile(GameObject):
 
     def _is_onscreen(self):
         game_window_rect = pygame.Rect((0,0), (DISPLAY_WIDTH, DISPLAY_HEIGHT))
-        return game_window_rect.contains(self.rect)
+        return game_window_rect.colliderect(self.draw_rect)
     
     def update(self, dt=0):
         super().update()
@@ -42,21 +44,24 @@ class Projectile(GameObject):
         self.onscreen = self._is_onscreen()
         if self.onscreen:
             self.pos_x += (self.speed * self.direction) * dt
-            self.rect.center = (self.pos_x, self.pos_y)
+            self.draw_rect.center = (self.pos_x, self.pos_y)
+            self.hitbox_rect.center = (self.pos_x, self.pos_y)
     
     def check_hit(self, rect):
         return self.rect.colliderect(rect)
 
 class Player(GameObject):
-    def __init__(self, path="images\\test_player.png", pos=(100, 360), hb=(10, 10), hp=5, s=200, cdt=0.5):
+    def __init__(self, path="images\\test_player.png", pos=(100, 360), hb=(20, 20), hp=5, s=200, cdt=0.5):
         super().__init__()
-
-        self.image = pygame.image.load(path).convert_alpha()
 
         self.pos_x, self.pos_y = pos
         
-        self.rect = pygame.Rect((0, 0), hb)
-        self.rect.center = (self.pos_x, self.pos_y)
+        self.image = pygame.image.load(path).convert_alpha()
+        self.draw_rect = self.image.get_rect()
+        self.draw_rect.center = (self.pos_x, self.pos_y)
+
+        self.hitbox_rect = pygame.Rect((0, 0), hb)
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
         self.hitpoints = hp
         self.speed = s
@@ -67,7 +72,9 @@ class Player(GameObject):
         super().update()
 
         self.pos_y += (self.speed * direction) * dt
-        self.rect.center = (self.pos_x, self.pos_y)
+
+        self.draw_rect.center = (self.pos_x, self.pos_y)
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
         if self.shoot_cooldown <= self.cooldown_time:
             self.shoot_cooldown += dt
@@ -106,9 +113,8 @@ def main():
             player.update(delta_time, 0)
         
         if keys[pygame.K_SPACE] and player.shoot_cooldown >= player.cooldown_time:
-            player_projectiles.append(Projectile(pos=player.rect.center, dir=1))
+            player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
             player.shoot_cooldown = 0
-            print(len(player_projectiles))
         
         for index, projectile in enumerate(player_projectiles):
             if projectile.onscreen:
