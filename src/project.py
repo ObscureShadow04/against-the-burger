@@ -48,7 +48,7 @@ class Projectile(GameObject):
             self.hitbox_rect.center = (self.pos_x, self.pos_y)
     
     def check_hit(self, rect):
-        return self.rect.colliderect(rect)
+        return self.hitbox_rect.colliderect(rect)
 
 class Player(GameObject):
     def __init__(self, path="images\\test_player.png", pos=(100, 360), hb=(20, 20), hp=5, s=200, cdt=0.5):
@@ -79,6 +79,26 @@ class Player(GameObject):
         if self.shoot_cooldown <= self.cooldown_time:
             self.shoot_cooldown += dt
 
+class GiantKillerSpaceRobot(GameObject):
+    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2):
+        super().__init__()
+
+        self.pos_x, self.pos_y = pos
+        
+        self.image = pygame.image.load(path).convert_alpha()
+        self.draw_rect = self.image.get_rect()
+        self.draw_rect.topleft = (self.pos_x, self.pos_y)
+
+        self.hitbox_rect = pygame.Rect((980, 120), hb)
+
+        self.hitpoints = hp
+        self.speed = s
+        self.shoot_cooldown = 0
+        self.cooldown_time = cdt
+    
+    def update(self):
+        super().update()
+
 def main():
     FRAMES_PER_SECOND = 24
     
@@ -93,6 +113,9 @@ def main():
 
     player = Player()
     player_projectiles = []
+
+    gksr = GiantKillerSpaceRobot()
+    gksr_projectiles = []
 
     running = True
 
@@ -116,14 +139,21 @@ def main():
             player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
             player.shoot_cooldown = 0
         
+        # update gksr
+
         for index, projectile in enumerate(player_projectiles):
             if projectile.onscreen:
-                projectile.update(delta_time)
+                if projectile.check_hit(gksr.hitbox_rect):
+                    del player_projectiles[index]
+                    # deal damage to gksr
+                else:
+                    projectile.update(delta_time)
             else:
                 del player_projectiles[index]
 
         screen.fill(pygame.Color(16, 0, 26))
 
+        gksr.draw(screen)
         player.draw(screen)
         for projectile in player_projectiles:
             projectile.draw(screen)
