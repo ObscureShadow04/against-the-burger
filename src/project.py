@@ -19,6 +19,36 @@ class GameObject():
     def draw(self, screen):
         screen.blit(self.image, self.draw_rect)
 
+class MeterBar():
+    def __init__(self, pos=(0, 0), dims=(250, 50), sm=0, col='White', amt=100):
+        self.position = pos
+
+        self.max_width = dims[0]
+        self.height = dims[1]
+
+        self.draw_rect = pygame.Rect(pos, dims)
+        self.shrink_mode = sm
+        self.color = col
+
+        self.max_amount = amt
+        self.amount = self.max_amount
+
+    def update(self, new_amount):
+        self.amount = new_amount
+        new_width = (self.max_width * (self.amount / self.max_amount))
+        print(new_width)
+        self.draw_rect.update((0, 0), (new_width, self.height))
+
+        if self.shrink_mode == 0:
+            self.draw_rect.topleft = self.position
+        elif self.shrink_mode == 1:
+            self.draw_rect.topright = self.position
+        else:
+            self.draw_rect.midtop = self.position
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.draw_rect)
+
 class Projectile(GameObject):
     def __init__(self, path="images\\test_projectile.png", pos=(0, 0), hb=(8, 8), s=750, dir=0, dmg=1):
         super().__init__()
@@ -89,7 +119,7 @@ class Player(GameObject):
             self.shoot_cooldown += dt
 
 class GiantKillerSpaceRobot(GameObject):
-    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=5, mp=20, fr=(0, DISPLAY_HEIGHT)):
+    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=5, mp=20, y_range=(0, DISPLAY_HEIGHT)):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -107,16 +137,24 @@ class GiantKillerSpaceRobot(GameObject):
         self.projectiles_per_wave = init_ppw
 
         self.projectile_origin_positions = []
-        firing_range = fr
+        firing_range = y_range
         origin_amounts = 20
         for x in range(origin_amounts):
             self.projectile_origin_positions.append((900, firing_range[0] + (((firing_range[1] - firing_range[0]) / origin_amounts) * (x + 1))))
+        
+        self.hitpoints_bar = MeterBar(amt=self.hitpoints)
     
     def update(self, dt=0):
         super().update()
         
         if self.shoot_cooldown <= self.cooldown_time:
             self.shoot_cooldown += dt
+        
+        self.hitpoints_bar.update(self.hitpoints)
+        
+    def draw(self, screen):
+        super().draw(screen)
+        self.hitpoints_bar.draw(screen)
 
 def main():
     FRAMES_PER_SECOND = 24
@@ -133,7 +171,7 @@ def main():
     player = Player(lim=(120, DISPLAY_HEIGHT))
     player_projectiles = []
 
-    gksr = GiantKillerSpaceRobot(cdt=0.2, fr=(150, 700))
+    gksr = GiantKillerSpaceRobot(y_range=(150, 700))
     gksr_projectiles = []
 
     running = True
@@ -179,7 +217,6 @@ def main():
                 if projectile.check_hit(player.hitbox_rect):
                     player.hitpoints -= projectile.damage
                     del gksr_projectiles[index]
-                    print(player.hitpoints)
                 else:
                     projectile.update(delta_time)
             else:
