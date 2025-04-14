@@ -89,7 +89,7 @@ class Player(GameObject):
             self.shoot_cooldown += dt
 
 class GiantKillerSpaceRobot(GameObject):
-    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=4):
+    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=5, mp=20, fr=(0, DISPLAY_HEIGHT)):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -107,9 +107,10 @@ class GiantKillerSpaceRobot(GameObject):
         self.projectiles_per_wave = init_ppw
 
         self.projectile_origin_positions = []
+        firing_range = fr
         origin_amounts = 20
         for x in range(origin_amounts):
-            self.projectile_origin_positions.append((900, self.pos_y + ((hb[1] / origin_amounts) * (x + 1))))
+            self.projectile_origin_positions.append((900, firing_range[0] + (((firing_range[1] - firing_range[0]) / origin_amounts) * (x + 1))))
     
     def update(self, dt=0):
         super().update()
@@ -132,7 +133,7 @@ def main():
     player = Player(lim=(120, DISPLAY_HEIGHT))
     player_projectiles = []
 
-    gksr = GiantKillerSpaceRobot()
+    gksr = GiantKillerSpaceRobot(cdt=0.2, fr=(150, 700))
     gksr_projectiles = []
 
     running = True
