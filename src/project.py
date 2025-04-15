@@ -19,6 +19,15 @@ class GameObject():
     def draw(self, screen):
         screen.blit(self.image, self.draw_rect)
 
+class StaticImage():
+    def __init__(self, path="images\\test_UI_bar.png", pos=(0, 0)):
+        self.image = pygame.image.load(path).convert_alpha()
+        self.draw_rect = self.image.get_rect()
+        self.draw_rect.topleft = pos
+    
+    def draw(self, screen):
+        screen.blit(self.image, self.draw_rect)
+
 class MeterBar():
     def __init__(self, pos=(0, 0), dims=(250, 50), sm=0, col='White', amt=100):
         self.position = pos
@@ -36,7 +45,6 @@ class MeterBar():
     def update(self, new_amount):
         self.amount = new_amount
         new_width = (self.max_width * (self.amount / self.max_amount))
-        print(new_width)
         self.draw_rect.update((0, 0), (new_width, self.height))
 
         if self.shrink_mode == 0:
@@ -103,6 +111,8 @@ class Player(GameObject):
         self.shoot_cooldown = 0
         self.cooldown_time = cdt
 
+        self.hitpoints_bar = MeterBar(pos=(30, 50), dims=(200, 20), sm=0, col='Blue', amt=self.hitpoints)
+
     def update(self, dt=0, direction=0):
         super().update()
 
@@ -118,8 +128,14 @@ class Player(GameObject):
         if self.shoot_cooldown <= self.cooldown_time:
             self.shoot_cooldown += dt
 
+        self.hitpoints_bar.update(self.hitpoints)
+
+    def draw(self, screen):
+        super().draw(screen)
+        self.hitpoints_bar.draw(screen)
+
 class GiantKillerSpaceRobot(GameObject):
-    def __init__(self, path="images\\test_gksr.png", pos=(880, 120), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=5, mp=20, y_range=(0, DISPLAY_HEIGHT)):
+    def __init__(self, path="images\\test_gksr.png", pos=(880, 170), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=5, mp=10, y_range=(0, DISPLAY_HEIGHT)):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -138,11 +154,11 @@ class GiantKillerSpaceRobot(GameObject):
 
         self.projectile_origin_positions = []
         firing_range = y_range
-        origin_amounts = 20
+        origin_amounts = mp
         for x in range(origin_amounts):
             self.projectile_origin_positions.append((900, firing_range[0] + (((firing_range[1] - firing_range[0]) / origin_amounts) * (x + 1))))
         
-        self.hitpoints_bar = MeterBar(amt=self.hitpoints)
+        self.hitpoints_bar = MeterBar(pos=(1230, 50), dims=(200, 20), sm=1, col='Red', amt=self.hitpoints)
     
     def update(self, dt=0):
         super().update()
@@ -156,25 +172,34 @@ class GiantKillerSpaceRobot(GameObject):
         super().draw(screen)
         self.hitpoints_bar.draw(screen)
 
+def choose_gksr_projectiles_origins(gksr):
+    positions = []
+    while len(positions) < gksr.projectiles_per_wave:
+        pos = random.choice(gksr.projectile_origin_positions)
+        if not pos in positions:
+            positions.append(pos)
+    return positions
+
 def main():
     FRAMES_PER_SECOND = 24
     
     pygame.init()
-    pygame.display.set_caption("Shooting Stars")
+    pygame.display.set_caption("Impending Doom")
 
-    info = pygame.display.Info()
     screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
     clock = pygame.time.Clock()
     delta_time = 0
 
-    player = Player(lim=(120, DISPLAY_HEIGHT))
+    player = Player(lim=(280, 580))
     player_projectiles = []
 
-    gksr = GiantKillerSpaceRobot(y_range=(150, 700))
+    gksr = GiantKillerSpaceRobot(y_range=(280, 550))
     gksr_projectiles = []
 
     running = True
+
+    ui_background_bar = StaticImage()
 
     while running:
         for event in pygame.event.get():
@@ -198,8 +223,9 @@ def main():
         
         gksr.update(delta_time)
         if gksr.shoot_cooldown >= gksr.cooldown_time:
-            for x in range(gksr.projectiles_per_wave):
-                gksr_projectiles.append(Projectile(pos=random.choice(gksr.projectile_origin_positions), dir=-1))
+            positions = choose_gksr_projectiles_origins(gksr)
+            for position in positions:
+                gksr_projectiles.append(Projectile(path='images\\test_gskr_projectile.png', pos=position, hb=(20,32), dir=-1))
             gksr.shoot_cooldown = 0
 
         for index, projectile in enumerate(player_projectiles):
@@ -223,6 +249,7 @@ def main():
                 del gksr_projectiles[index]
 
         screen.fill(pygame.Color(16, 0, 26))
+        ui_background_bar.draw(screen)
 
         gksr.draw(screen)
         player.draw(screen)
