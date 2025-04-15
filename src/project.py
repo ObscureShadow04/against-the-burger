@@ -198,6 +198,8 @@ def main():
     gksr_projectiles = []
 
     running = True
+    game_phase = 1
+    game_end_scenario = 0
 
     ui_background_bar = StaticImage()
 
@@ -210,6 +212,39 @@ def main():
         if keys[pygame.K_BACKSPACE] or keys[pygame.K_ESCAPE]:
             running = False
         
+        if game_phase == 1:
+            # display the title card
+            # proceed to next game phase when player presses the space bar
+            # increase gamephase to 2
+            pass
+        elif game_phase == 2:
+            # initialize player and player projectiles
+            # initialize GKSR and gksr projectiles
+            # initialize ui background bar
+            # increase gamephase to 3
+            pass
+        elif game_phase == 3:
+            # run the game:
+            # update and draw the player and player projectiles
+            # update and draw the gksr and gksr projectiles
+            # ^^^ do this until:
+            # 1. the player's health is depleted
+            # 2. the gksr's health is depleted
+            # 3. the timer runs out
+            # ^^^ when this happens:
+            # change the value of game_end_scenario to 1, 2, or 3 depending on which of the above happened
+            # increase the gamephase to 4
+            pass
+        else:
+            # display a win or lose screen depending on the value of game_end_scenario
+            # prompt the user to either:
+            # press space to try again
+            # press escape to quit
+            # ^^^ depending on which of these happen:
+            # set gamephase to 2 if the user presses space
+            # do nothing if the player presses escape, since that's already taken care of farther above.
+            pass
+
         if keys[pygame.K_UP] and not keys[pygame.K_DOWN]:
             player.update(delta_time, -1)
         elif keys[pygame.K_DOWN] and not keys[pygame.K_UP]:
@@ -225,7 +260,7 @@ def main():
         if gksr.shoot_cooldown >= gksr.cooldown_time:
             positions = choose_gksr_projectiles_origins(gksr)
             for position in positions:
-                gksr_projectiles.append(Projectile(path='images\\test_gskr_projectile.png', pos=position, hb=(20,32), dir=-1))
+                gksr_projectiles.append(Projectile(path='images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
             gksr.shoot_cooldown = 0
 
         for index, projectile in enumerate(player_projectiles):
