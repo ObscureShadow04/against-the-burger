@@ -35,12 +35,22 @@ class MeterBar():
         self.max_width = dims[0]
         self.height = dims[1]
 
-        self.draw_rect = pygame.Rect(pos, dims)
         self.shrink_mode = sm
         self.color = col
 
         self.max_amount = amt
         self.amount = self.max_amount
+
+        self.draw_rect = pygame.Rect(pos, dims)
+        if self.shrink_mode == 0:
+            self.draw_rect.topleft = self.position
+        elif self.shrink_mode == 1:
+            self.draw_rect.topright = self.position
+        else:
+            self.draw_rect.midtop = self.position
+        
+        self.background_rect = pygame.Rect(pos, (dims[0] + 10, dims[1] + 10))
+        self.background_rect.center = self.draw_rect.center
 
     def update(self, new_amount):
         self.amount = new_amount
@@ -55,6 +65,7 @@ class MeterBar():
             self.draw_rect.midtop = self.position
 
     def draw(self, screen):
+        pygame.draw.rect(screen, 'Black', self.background_rect)
         pygame.draw.rect(screen, self.color, self.draw_rect)
 
 class Projectile(GameObject):
@@ -213,7 +224,7 @@ def update_projectile_group(projectiles, delta_time, target):
     return new_projectiles
 
 def main():
-    FRAMES_PER_SECOND = 24
+    FRAMES_PER_SECOND = 60
     
     pygame.init()
     pygame.display.set_caption("Impending Doom")
