@@ -135,7 +135,7 @@ class Player(GameObject):
         self.hitpoints_bar.draw(screen)
 
 class GiantKillerSpaceRobot(GameObject):
-    def __init__(self, path="images\\test_gksr.png", pos=(880, 170), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=5, mp=10, y_range=(0, DISPLAY_HEIGHT)):
+    def __init__(self, path="images\\test_gksr_phase1.png", pos=(880, 170), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=4, mp=10, y_range=(0, DISPLAY_HEIGHT)):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -147,6 +147,8 @@ class GiantKillerSpaceRobot(GameObject):
         self.hitbox_rect = pygame.Rect((980, 120), hb)
 
         self.hitpoints = hp
+        self.max_hitpoints = hp
+        self.attack_phase = 1
         self.speed = s
         self.shoot_cooldown = 0
         self.cooldown_time = cdt
@@ -166,6 +168,25 @@ class GiantKillerSpaceRobot(GameObject):
         if self.shoot_cooldown <= self.cooldown_time:
             self.shoot_cooldown += dt
         
+        health_percent = self.hitpoints / self.max_hitpoints
+        if health_percent < 0.66 and self.attack_phase == 1:
+            self.attack_phase = 2
+        elif health_percent < 0.33 and self.attack_phase == 2:
+            self.attack_phase = 3
+
+        if self.attack_phase == 1:
+            self.image = pygame.image.load('images\\test_gksr_phase1.png').convert_alpha()
+            self.projectiles_per_wave = 4
+            self.cooldown_time = 2.0
+        elif self.attack_phase == 2:
+            self.image = pygame.image.load('images\\test_gksr_phase2.png').convert_alpha()
+            self.projectiles_per_wave = 5
+            self.cooldown_time = 1.5
+        if self.attack_phase == 3:
+            self.image = pygame.image.load('images\\test_gksr_phase3.png').convert_alpha()
+            self.projectiles_per_wave = 6
+            self.cooldown_time = 1.0
+
         self.hitpoints_bar.update(self.hitpoints)
         
     def draw(self, screen):
@@ -198,6 +219,7 @@ def main():
     gksr_projectiles = []
 
     running = True
+    time_left = 60.0
     game_phase = 1
     game_end_scenario = 0
 
@@ -233,6 +255,7 @@ def main():
             gksr_projectiles = []
 
             game_end_scenario = 0
+            time_left = 60.0
 
             game_phase +=1
         elif game_phase == 3:
@@ -297,10 +320,14 @@ def main():
             for projectile in gksr_projectiles:
                 projectile.draw(screen)
             
+            time_left -= delta_time
+            
             if gksr.hitpoints <= 0:
                 game_end_scenario = 1
             elif player.hitpoints <= 0:
                 game_end_scenario = 2
+            elif time_left <= 0:
+                game_end_scenario = 3
             
             if game_end_scenario != 0:
                 game_phase += 1
@@ -314,7 +341,7 @@ def main():
             # do nothing if the player presses escape, since that's already taken care of farther above.
             if game_end_scenario == 1:
                 victory_card.draw(screen)
-            elif game_end_scenario == 2:
+            elif game_end_scenario == 2 or game_end_scenario == 3:
                 game_over_card.draw(screen)
 
             if keys[pygame.K_LSHIFT]:
