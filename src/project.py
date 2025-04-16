@@ -218,8 +218,9 @@ def main():
     gksr = GiantKillerSpaceRobot(y_range=(280, 550))
     gksr_projectiles = []
 
-    running = True
     time_left = 60.0
+    time_bar = MeterBar(pos=(640, 20), dims=(500, 20), sm=2, col='Purple', amt=time_left)
+
     game_phase = 1
     game_end_scenario = 0
 
@@ -228,6 +229,7 @@ def main():
     victory_card = StaticImage(path="images\\victory_card.png")
     ui_background_bar = StaticImage()
 
+    running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -255,7 +257,9 @@ def main():
             gksr_projectiles = []
 
             game_end_scenario = 0
+            
             time_left = 60.0
+            time_bar = MeterBar(pos=(640, 20), dims=(500, 20), sm=2, col='Purple', amt=time_left)
 
             game_phase +=1
         elif game_phase == 3:
@@ -269,6 +273,7 @@ def main():
             # ^^^ when this happens:
             # change the value of game_end_scenario to 1, 2, or 3 depending on which of the above happened
             # increase the gamephase to 4
+            time_bar.update(time_left)
 
             if keys[pygame.K_UP] and not keys[pygame.K_DOWN]:
                 player.update(delta_time, -1)
@@ -311,6 +316,8 @@ def main():
             screen.fill(pygame.Color(16, 0, 26))
             ui_background_bar.draw(screen)
 
+            time_bar.draw(screen)
+            
             gksr.draw(screen)
             player.draw(screen)
 
