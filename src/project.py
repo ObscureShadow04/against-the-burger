@@ -49,7 +49,10 @@ class MeterBar():
         else:
             self.draw_rect.midtop = self.position
         
-        self.background_rect = pygame.Rect(pos, (dims[0] + 10, dims[1] + 10))
+        self.outline_rect = pygame.Rect(pos, (dims[0] + 10, dims[1] + 10))
+        self.outline_rect.center = self.draw_rect.center
+
+        self.background_rect = pygame.Rect(pos, dims)
         self.background_rect.center = self.draw_rect.center
 
     def update(self, new_amount):
@@ -65,7 +68,8 @@ class MeterBar():
             self.draw_rect.midtop = self.position
 
     def draw(self, screen):
-        pygame.draw.rect(screen, 'Black', self.background_rect)
+        pygame.draw.rect(screen, 'Black', self.outline_rect)
+        pygame.draw.rect(screen, pygame.Color(self.color).lerp('Black', 0.5), self.background_rect)
         pygame.draw.rect(screen, self.color, self.draw_rect)
 
 class Projectile(GameObject):
