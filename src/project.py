@@ -201,6 +201,9 @@ def main():
     game_phase = 1
     game_end_scenario = 0
 
+    title_card = StaticImage(path="images\\title_card.png")
+    game_over_card = StaticImage(path="images\\game_over_card.png")
+    victory_card = StaticImage(path="images\\victory_card.png")
     ui_background_bar = StaticImage()
 
     while running:
@@ -216,13 +219,22 @@ def main():
             # display the title card
             # proceed to next game phase when player presses the space bar
             # increase gamephase to 2
-            pass
+            title_card.draw(screen)
+            if keys[pygame.K_SPACE]:
+                game_phase += 1
         elif game_phase == 2:
             # initialize player and player projectiles
             # initialize GKSR and gksr projectiles
-            # initialize ui background bar
             # increase gamephase to 3
-            pass
+            player = Player(lim=(280, 580))
+            player_projectiles = []
+
+            gksr = GiantKillerSpaceRobot(y_range=(280, 550))
+            gksr_projectiles = []
+
+            game_end_scenario = 0
+
+            game_phase +=1
         elif game_phase == 3:
             # run the game:
             # update and draw the player and player projectiles
@@ -234,7 +246,64 @@ def main():
             # ^^^ when this happens:
             # change the value of game_end_scenario to 1, 2, or 3 depending on which of the above happened
             # increase the gamephase to 4
-            pass
+
+            if keys[pygame.K_UP] and not keys[pygame.K_DOWN]:
+                player.update(delta_time, -1)
+            elif keys[pygame.K_DOWN] and not keys[pygame.K_UP]:
+                player.update(delta_time, 1)
+            else:
+                player.update(delta_time, 0)
+            
+            if keys[pygame.K_SPACE] and player.shoot_cooldown >= player.cooldown_time:
+                player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
+                player.shoot_cooldown = 0
+        
+            gksr.update(delta_time)
+            if gksr.shoot_cooldown >= gksr.cooldown_time:
+                positions = choose_gksr_projectiles_origins(gksr)
+                for position in positions:
+                    gksr_projectiles.append(Projectile(path='images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
+                gksr.shoot_cooldown = 0
+
+            for index, projectile in enumerate(player_projectiles):
+                if projectile.onscreen:
+                    if projectile.check_hit(gksr.hitbox_rect):
+                        gksr.hitpoints -= projectile.damage
+                        del player_projectiles[index]
+                    else:
+                        projectile.update(delta_time)
+                else:
+                    del player_projectiles[index]
+        
+            for index, projectile in enumerate(gksr_projectiles):
+                if projectile.onscreen:
+                    if projectile.check_hit(player.hitbox_rect):
+                        player.hitpoints -= projectile.damage
+                        del gksr_projectiles[index]
+                    else:
+                        projectile.update(delta_time)
+                else:
+                    del gksr_projectiles[index]
+    
+            screen.fill(pygame.Color(16, 0, 26))
+            ui_background_bar.draw(screen)
+
+            gksr.draw(screen)
+            player.draw(screen)
+
+            for projectile in player_projectiles:
+                projectile.draw(screen)
+        
+            for projectile in gksr_projectiles:
+                projectile.draw(screen)
+            
+            if gksr.hitpoints <= 0:
+                game_end_scenario = 1
+            elif player.hitpoints <= 0:
+                game_end_scenario = 2
+            
+            if game_end_scenario != 0:
+                game_phase += 1
         else:
             # display a win or lose screen depending on the value of game_end_scenario
             # prompt the user to either:
@@ -243,57 +312,13 @@ def main():
             # ^^^ depending on which of these happen:
             # set gamephase to 2 if the user presses space
             # do nothing if the player presses escape, since that's already taken care of farther above.
-            pass
+            if game_end_scenario == 1:
+                victory_card.draw(screen)
+            elif game_end_scenario == 2:
+                game_over_card.draw(screen)
 
-        if keys[pygame.K_UP] and not keys[pygame.K_DOWN]:
-            player.update(delta_time, -1)
-        elif keys[pygame.K_DOWN] and not keys[pygame.K_UP]:
-            player.update(delta_time, 1)
-        else:
-            player.update(delta_time, 0)
-        
-        if keys[pygame.K_SPACE] and player.shoot_cooldown >= player.cooldown_time:
-            player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
-            player.shoot_cooldown = 0
-        
-        gksr.update(delta_time)
-        if gksr.shoot_cooldown >= gksr.cooldown_time:
-            positions = choose_gksr_projectiles_origins(gksr)
-            for position in positions:
-                gksr_projectiles.append(Projectile(path='images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
-            gksr.shoot_cooldown = 0
-
-        for index, projectile in enumerate(player_projectiles):
-            if projectile.onscreen:
-                if projectile.check_hit(gksr.hitbox_rect):
-                    gksr.hitpoints -= projectile.damage
-                    del player_projectiles[index]
-                else:
-                    projectile.update(delta_time)
-            else:
-                del player_projectiles[index]
-        
-        for index, projectile in enumerate(gksr_projectiles):
-            if projectile.onscreen:
-                if projectile.check_hit(player.hitbox_rect):
-                    player.hitpoints -= projectile.damage
-                    del gksr_projectiles[index]
-                else:
-                    projectile.update(delta_time)
-            else:
-                del gksr_projectiles[index]
-
-        screen.fill(pygame.Color(16, 0, 26))
-        ui_background_bar.draw(screen)
-
-        gksr.draw(screen)
-        player.draw(screen)
-
-        for projectile in player_projectiles:
-            projectile.draw(screen)
-        
-        for projectile in gksr_projectiles:
-            projectile.draw(screen)
+            if keys[pygame.K_LSHIFT]:
+                game_phase = 2
 
         pygame.display.flip()
         delta_time = clock.tick(FRAMES_PER_SECOND) / 1000
