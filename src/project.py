@@ -105,6 +105,40 @@ class Projectile(GameObject):
     def check_hit(self, rect):
         return self.hitbox_rect.colliderect(rect)
 
+class PowerUp(GameObject):
+    def __init__(self, path="images\\test_powerup.png", pos=(900, 360), hb=(20, 20), code=1):
+        super().__init__()
+        self.pos_x, self.pos_y = pos
+        
+        self.image = pygame.image.load(path).convert_alpha()
+        self.draw_rect = self.image.get_rect()
+        self.draw_rect.center = (self.pos_x, self.pos_y)
+
+        self.hitbox_rect = pygame.Rect((0, 0), hb)
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
+
+        self.powerup_code = code
+        self.powerup_duration = 5.0
+        self.direction = -1
+        self.speed = 350
+        self.onscreen = True
+    
+    def _is_onscreen(self):
+        game_window_rect = pygame.Rect((0,0), (DISPLAY_WIDTH, DISPLAY_HEIGHT))
+        return game_window_rect.colliderect(self.draw_rect)
+    
+    def update(self, dt=0):
+        super().update()
+        
+        self.onscreen = self._is_onscreen()
+        if self.onscreen:
+            self.pos_x += (self.speed * self.direction) * dt
+            self.draw_rect.center = (self.pos_x, self.pos_y)
+            self.hitbox_rect.center = (self.pos_x, self.pos_y)
+    
+    def check_hit(self, rect):
+        return self.hitbox_rect.colliderect(rect)
+
 class Player(GameObject):
     def __init__(self, path="images\\test_player.png", pos=(100, 360), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=200, cdt=0.5):
         super().__init__()
@@ -122,16 +156,47 @@ class Player(GameObject):
         self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
         self.hitpoints = hp
+        self.max_hitpoints = hp
+
         self.speed = s
+
         self.shoot_cooldown = 0
         self.cooldown_time = cdt
+
+        self.powerup_effect_duration = 0.0
+        self.active_powerup = 0
+
+        self.speed_when_powerup = self.speed * 2
+        self.cooldown_time_when_powerup = self.cooldown_time * 0.5
 
         self.hitpoints_bar = MeterBar(pos=(30, 50), dims=(200, 20), sm=0, col='Blue', amt=self.hitpoints)
 
     def update(self, dt=0, direction=0):
         super().update()
 
-        projected_y = self.pos_y + ((self.speed * direction) * dt)
+        if self.active_powerup != 0:
+            self.powerup_effect_duration -= dt
+        
+        current_speed = self.speed
+        current_cooldown_time = self.cooldown_time
+
+        if self.powerup_effect_duration > 0:
+            if self.active_powerup == 1:
+                self.hitpoints += 1
+                self.powerup_effect_duration = 0
+                self.active_powerup = 0
+            elif self.active_powerup == 2:
+                current_speed = self.speed_when_powerup
+            elif self.active_powerup == 3:
+                current_cooldown_time = self.cooldown_time_when_powerup                
+        else:
+            self.active_powerup = 0
+        print(self.active_powerup)
+
+        if self.hitpoints > self.max_hitpoints:
+            self.hitpoints = self.max_hitpoints
+        
+        projected_y = self.pos_y + ((current_speed * direction) * dt)
         projected_draw_rect = self.draw_rect.copy()
         projected_draw_rect.center = (self.pos_x, projected_y)
 
@@ -140,9 +205,9 @@ class Player(GameObject):
             self.draw_rect.center = (self.pos_x, self.pos_y)
             self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
-        if self.shoot_cooldown <= self.cooldown_time:
+        if self.shoot_cooldown <= current_cooldown_time:
             self.shoot_cooldown += dt
-
+        
         self.hitpoints_bar.update(self.hitpoints)
 
     def draw(self, screen):
@@ -191,7 +256,7 @@ class GiantKillerSpaceRobot(GameObject):
 
         if self.attack_phase == 1:
             self.image = pygame.image.load('images\\test_gksr_phase1.png').convert_alpha()
-            self.projectiles_per_wave = 6
+            self.projectiles_per_wave = 4
             self.cooldown_time = 2.0
         elif self.attack_phase == 2:
             self.image = pygame.image.load('images\\test_gksr_phase2.png').convert_alpha()
@@ -227,6 +292,11 @@ def update_projectile_group(projectiles, delta_time, target):
                 new_projectiles.append(projectile)
     return new_projectiles
 
+def spawn_powerup():
+    powerup_sprites = ['images\\powerup_healthpack.png', 'images\\powerup_speed.png', 'images\\powerup_firerate.png']
+    random_num = random.randint(1,3)
+    return PowerUp(path=powerup_sprites[random_num - 1],code=random_num)
+
 def main():
     FRAMES_PER_SECOND = 60
     
@@ -246,6 +316,8 @@ def main():
 
     time_left = 60.0
     time_bar = MeterBar(pos=(640, 20), dims=(500, 20), sm=2, col='Purple', amt=time_left)
+
+    powerup_pickups = []
 
     game_phase = 1
     game_end_scenario = 0
@@ -317,10 +389,27 @@ def main():
                 positions = choose_gksr_projectiles_origins(gksr)
                 for position in positions:
                     gksr_projectiles.append(Projectile(path='images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
+                
+                chance = 10
+                random_num = random.randint(1, 100)
+                if random_num < chance:
+                    powerup_pickups.append(spawn_powerup())
+
                 gksr.shoot_cooldown = 0
 
             player_projectiles = update_projectile_group(player_projectiles, delta_time, gksr)
             gksr_projectiles = update_projectile_group(gksr_projectiles, delta_time, player)
+
+            new_powerup_pickups = []
+            for powerup in powerup_pickups:
+                if powerup.onscreen:
+                    powerup.update(delta_time)                    
+                    if powerup.check_hit(player.hitbox_rect) and player.active_powerup == 0:
+                        player.active_powerup = powerup.powerup_code
+                        player.powerup_effect_duration = powerup.powerup_duration
+                    else:
+                        new_powerup_pickups.append(powerup)
+            powerup_pickups = new_powerup_pickups
     
             screen.fill(pygame.Color(16, 0, 26))
             ui_background_bar.draw(screen)
@@ -336,6 +425,9 @@ def main():
             for projectile in gksr_projectiles:
                 projectile.draw(screen)
             
+            for powerup in powerup_pickups:
+                powerup.draw(screen)
+
             time_left -= delta_time
             
             if gksr.hitpoints <= 0:
