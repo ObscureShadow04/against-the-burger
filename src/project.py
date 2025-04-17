@@ -162,6 +162,7 @@ class Player(GameObject):
 
         self.shoot_cooldown = 0
         self.cooldown_time = cdt
+        self.current_cooldown_time = cdt
 
         self.powerup_effect_duration = 0.0
         self.active_powerup = 0
@@ -178,7 +179,7 @@ class Player(GameObject):
             self.powerup_effect_duration -= dt
         
         current_speed = self.speed
-        current_cooldown_time = self.cooldown_time
+        self.current_cooldown_time = self.cooldown_time
 
         if self.powerup_effect_duration > 0:
             if self.active_powerup == 1:
@@ -188,10 +189,10 @@ class Player(GameObject):
             elif self.active_powerup == 2:
                 current_speed = self.speed_when_powerup
             elif self.active_powerup == 3:
-                current_cooldown_time = self.cooldown_time_when_powerup                
+                self.current_cooldown_time = self.cooldown_time_when_powerup                
         else:
             self.active_powerup = 0
-        print(self.active_powerup)
+        print(self.current_cooldown_time)
 
         if self.hitpoints > self.max_hitpoints:
             self.hitpoints = self.max_hitpoints
@@ -205,7 +206,7 @@ class Player(GameObject):
             self.draw_rect.center = (self.pos_x, self.pos_y)
             self.hitbox_rect.center = (self.pos_x, self.pos_y)
 
-        if self.shoot_cooldown <= current_cooldown_time:
+        if self.shoot_cooldown <= self.current_cooldown_time:
             self.shoot_cooldown += dt
         
         self.hitpoints_bar.update(self.hitpoints)
@@ -380,7 +381,7 @@ def main():
             else:
                 player.update(delta_time, 0)
             
-            if keys[pygame.K_SPACE] and player.shoot_cooldown >= player.cooldown_time:
+            if keys[pygame.K_SPACE] and player.shoot_cooldown >= player.current_cooldown_time:
                 player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
                 player.shoot_cooldown = 0
         
