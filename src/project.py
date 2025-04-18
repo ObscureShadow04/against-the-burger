@@ -55,6 +55,7 @@ class AnimatedSprite(Sprite):
 
         if self.time_since_last_replace >= self.image_replace_time:
             self.image_index += 1
+            self.time_since_last_replace = 0
         
         if self.image_index == len(self.images):
             self.image_index = 0
