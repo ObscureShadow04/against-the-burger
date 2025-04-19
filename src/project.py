@@ -2,18 +2,27 @@ import pygame
 import random
 
 DISPLAY_WIDTH, DISPLAY_HEIGHT = (1280, 720)
+UNIVERSAL_SPRITE_SCALE = 2.0
 
 class Sprite():
     def __init__(self, path='', pos=(0, 0), dims=(10, 10), col=pygame.Color('White')):
         self.image = None
-        if path != '':
-            self.image = pygame.image.load(path).convert_alpha()
-            
         self.draw_rect = pygame.Rect((0, 0), dims)
-        self.draw_rect.center = pos
 
+        if path != '':
+            self.image = self._get_scaled_image_from_path(path)
+            self.draw_rect = self.image.get_rect()        
+
+        self.draw_rect.center = pos
         self.color = col
     
+    def _get_scaled_image_from_path(self, path):
+        img = pygame.image.load(path).convert_alpha()
+        img_w = img.get_width()
+        img_h = img.get_height()
+        img = pygame.transform.scale_by(img, (UNIVERSAL_SPRITE_SCALE, UNIVERSAL_SPRITE_SCALE))
+        return img
+
     def get_draw_rect(self):
         return self.draw_rect
     
@@ -42,10 +51,10 @@ class AnimatedSprite(Sprite):
 
         self.draw_rect = self.images[0].get_rect()
         self.draw_rect.center = pos
-    
+
     def _get_images_from_path(self, new_path=''):
         for num in range(0, self.num_images, 1):
-            self.images.append(pygame.image.load(f"{new_path}{num}.png"))
+            self.images.append(self._get_scaled_image_from_path(f'{new_path}{num}.png'))
     
     def set_framerate(self, fps=12):
         self.image_replace_time = 1.0 / fps
@@ -79,7 +88,7 @@ class GameObject():
         screen.blit(self.image, self.draw_rect)
 
 class StaticImage():
-    def __init__(self, path="test_images\\test_UI_bar.png", pos=(0, 0)):
+    def __init__(self, path='test_images\\test_UI_bar.png', pos=(0, 0)):
         self.image = pygame.image.load(path).convert_alpha()
         self.draw_rect = self.image.get_rect()
         self.draw_rect.topleft = pos
@@ -132,7 +141,7 @@ class MeterBar():
         pygame.draw.rect(screen, self.color, self.draw_rect)
 
 class Projectile(GameObject):
-    def __init__(self, path="test_images\\test_projectile.png", pos=(0, 0), hb=(8, 8), s=750, dir=0, dmg=1):
+    def __init__(self, path='test_images\\test_projectile.png', pos=(0, 0), hb=(8, 8), s=750, dir=0, dmg=1):
         super().__init__()
         self.pos_x, self.pos_y = pos
         
@@ -165,7 +174,7 @@ class Projectile(GameObject):
         return self.hitbox_rect.colliderect(rect)
 
 class PowerUp(GameObject):
-    def __init__(self, path="test_images\\test_powerup.png", pos=(900, 360), hb=(20, 20), code=1):
+    def __init__(self, path='test_images\\test_powerup.png', pos=(900, 360), hb=(20, 20), code=1):
         super().__init__()
         self.pos_x, self.pos_y = pos
         
@@ -199,7 +208,7 @@ class PowerUp(GameObject):
         return self.hitbox_rect.colliderect(rect)
 
 class Player(GameObject):
-    def __init__(self, path="test_images\\test_player.png", pos=(100, 360), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=200, cdt=0.5):
+    def __init__(self, path='test_images\\test_player.png', pos=(100, 360), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=200, cdt=0.5):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -274,7 +283,7 @@ class Player(GameObject):
         self.hitpoints_bar.draw(screen)
 
 class GiantKillerSpaceRobot(GameObject):
-    def __init__(self, path="test_images\\test_gksr_phase1.png", pos=(880, 170), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=6, mp=10, y_range=(0, DISPLAY_HEIGHT)):
+    def __init__(self, path='test_images\\test_gksr_phase1.png', pos=(880, 170), hb=(300, 600), hp=100, s=200, cdt=2, init_ppw=6, mp=10, y_range=(0, DISPLAY_HEIGHT)):
         super().__init__()
 
         self.pos_x, self.pos_y = pos
@@ -360,7 +369,7 @@ def main():
     FRAMES_PER_SECOND = 60
     
     pygame.init()
-    pygame.display.set_caption("Impending Doom")
+    pygame.display.set_caption('Impending Doom')
 
     screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
@@ -381,12 +390,13 @@ def main():
     game_phase = 1
     game_end_scenario = 0
 
-    title_card = StaticImage(path="test_images\\title_card.png")
-    game_over_card = StaticImage(path="test_images\\game_over_card.png")
-    victory_card = StaticImage(path="test_images\\victory_card.png")
+    title_card = StaticImage(path='test_images\\title_card.png')
+    game_over_card = StaticImage(path='test_images\\game_over_card.png')
+    victory_card = StaticImage(path='test_images\\victory_card.png')
     ui_background_bar = StaticImage()
 
-    test_sprite = AnimatedSprite(path='images\\gksr\\phase3\\character\\', pos=(300, 300), fc=4)
+    test_sprite1 = AnimatedSprite(path='images\\gksr\\phase3\\blast\\', pos=(300, 300), fc=8)
+    test_sprite2 = AnimatedSprite(path='images\\gksr\\phase3\\character\\', pos=(600, 300), fc=4)
 
     running = True
     while running:
@@ -402,10 +412,12 @@ def main():
             # display the title card
             # proceed to next game phase when player presses the space bar
             # increase gamephase to 2
-            test_sprite.update(delta_time)
-
+            test_sprite1.update(delta_time)
+            test_sprite2.update(delta_time)
+            
             title_card.draw(screen)
-            test_sprite.draw(screen)
+            test_sprite1.draw(screen)
+            test_sprite2.draw(screen)
             if keys[pygame.K_SPACE]:
                 game_phase += 1
         elif game_phase == 2:
