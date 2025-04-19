@@ -36,7 +36,7 @@ class Sprite():
             pygame.draw.rect(screen, self.color, self.draw_rect)
 
 class AnimatedSprite(Sprite):
-    def __init__(self, path='', pos=(0, 0), fc=4, fps=12):
+    def __init__(self, path='', pos=(0, 0), fc=3, fps=12):
         super().__init__()
 
         self.num_images = fc
@@ -70,6 +70,57 @@ class AnimatedSprite(Sprite):
             self.image_index = 0
         
         self.image = self.images[self.image_index]
+
+class Character():
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=200, cdt=1.0):
+        self.pos_x, self.pos_y = pos
+        self.y_range = lim
+
+        self.hitbox_rect = pygame.Rect((0, 0), hb)
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
+
+        self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
+
+        self.hitpoints = hp
+        self.max_hitpoints = hp
+
+        self.speed = s
+
+        self.time_since_last_shoot = 0
+        self.cooldown_time = cdt
+    
+    def _update_hitbox_rect_position(self, new_rect):
+        self.pos_y = new_rect.center[1]
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
+        self.hitbox_rect.center = (self.pos_x, self.pos_y)
+
+    def _manage_excessive_hitpoints(self):
+        if self.hitpoints > self.max_hitpoints:
+            self.hitpoints = self.max_hitpoints
+
+    def _manage_shoot_cooldown(self, dt=0):
+        if self.time_since_last_shoot <= self.cooldown_time:
+            self.time_since_last_shoot += dt
+    
+    def _calculate_projected_position(self, dt=0, direction=0):
+        projected_y = self.pos_y + ((self.speed * direction) * dt)
+        projected_hitbox_rect = self.hitbox_rect.copy()
+        projected_hitbox_rect.center = (self.pos_x, projected_y)
+        return projected_hitbox_rect
+
+    def update(self, dt=0, direction=0):
+        self._manage_excessive_hitpoints
+        
+        projected_hitbox_rect = self._calculate_projected_position(dt, direction)
+        if not projected_hitbox_rect.top <= self.y_range[0] and not projected_hitbox_rect.bottom >= self.y_range[1]:
+            self._update_hitbox_rect_position(projected_hitbox_rect)
+
+        self._manage_shoot_cooldown(dt)
+        
+        self.sprite.update(dt)
+    
+    def draw(self, screen):
+        self.sprite.draw(screen)   
 
 class GameObject():
     def __init__(self):
@@ -395,8 +446,7 @@ def main():
     victory_card = StaticImage(path='test_images\\victory_card.png')
     ui_background_bar = StaticImage()
 
-    test_sprite1 = AnimatedSprite(path='images\\gksr\\phase3\\blast\\', pos=(300, 300), fc=8)
-    test_sprite2 = AnimatedSprite(path='images\\gksr\\phase3\\character\\', pos=(600, 300), fc=4)
+    test_character = Character(sprite_details=('images\\gksr\\phase1\\character\\', 4, 12), pos=(300, 400), lim=(200, 600), hb=(20, 20), hp=10)
 
     running = True
     while running:
@@ -412,12 +462,12 @@ def main():
             # display the title card
             # proceed to next game phase when player presses the space bar
             # increase gamephase to 2
-            test_sprite1.update(delta_time)
-            test_sprite2.update(delta_time)
             
+            test_character.update(delta_time, 0)
+
             title_card.draw(screen)
-            test_sprite1.draw(screen)
-            test_sprite2.draw(screen)
+            test_character.draw(screen)
+
             if keys[pygame.K_SPACE]:
                 game_phase += 1
         elif game_phase == 2:
