@@ -79,7 +79,7 @@ class Character():
         self.y_range = lim
 
         self.hitbox_rect = pygame.Rect((0, 0), hb)
-        self.hitbox_rect.center = (self.pos_x, self.pos_y)
+        self.hitbox_rect.center = self.position_vector()
 
         self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
 
@@ -241,6 +241,41 @@ class GiantKillerSpaceRobot(Character):
         super().draw(screen)
         self.hitpoints_bar.draw(screen)
 
+class MovingObject():
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0):
+        self.pos_x, self.pos_y = pos
+
+        self.hitbox_rect = pygame.Rect((0, 0), hb)
+        self.hitbox_rect.center = self.position_vector()
+
+        self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
+
+        self.speed = s
+        self.direction = dir
+        self.onscreen = True
+    
+    def position_vector(self):
+        return (self.pos_x, self.pos_y)
+    
+    def _is_onscreen(self):
+        game_window_rect = pygame.Rect((0,0), (DISPLAY_WIDTH, DISPLAY_HEIGHT))
+        return game_window_rect.colliderect(self.sprite.draw_rect)
+    
+    def _adjust_position(self, dt=0):
+        self.pos_x += (self.speed * self.direction) * dt
+        self.hitbox_rect.center = self.position_vector()
+
+    def update(self, dt=0):        
+        self.onscreen = self._is_onscreen()
+        if self.onscreen:
+            self._adjust_position
+        self.sprite.update(dt, self.position_vector())
+    
+    def check_hit(self, rect):
+        return self.hitbox_rect.colliderect(rect)
+
+
+
 class GameObject():
     def __init__(self):
         self.image = pygame.Surface((10, 10))
@@ -310,7 +345,7 @@ class MeterBar():
         pygame.draw.rect(screen, pygame.Color(self.color).lerp('Black', 0.5), self.background_rect)
         pygame.draw.rect(screen, self.color, self.draw_rect)
 
-class Projectile(GameObject):
+class OldProjectile(GameObject):
     def __init__(self, path='test_images\\test_projectile.png', pos=(0, 0), hb=(8, 8), s=750, dir=0, dmg=1):
         super().__init__()
         self.pos_x, self.pos_y = pos
@@ -343,7 +378,7 @@ class Projectile(GameObject):
     def check_hit(self, rect):
         return self.hitbox_rect.colliderect(rect)
 
-class PowerUp(GameObject):
+class OldPowerUp(GameObject):
     def __init__(self, path='test_images\\test_powerup.png', pos=(900, 360), hb=(20, 20), code=1):
         super().__init__()
         self.pos_x, self.pos_y = pos
@@ -533,7 +568,7 @@ def update_projectile_group(projectiles, delta_time, target):
 def spawn_powerup():
     powerup_sprites = ['test_images\\powerup_healthpack.png', 'test_images\\powerup_speed.png', 'test_images\\powerup_firerate.png']
     random_num = random.randint(1,3)
-    return PowerUp(path=powerup_sprites[random_num - 1],code=random_num)
+    return OldPowerUp(path=powerup_sprites[random_num - 1],code=random_num)
 
 def main():
     FRAMES_PER_SECOND = 60
@@ -586,10 +621,10 @@ def main():
             if keys[pygame.K_SPACE]:
                 game_phase += 1
         elif game_phase == 2:
-            player = Player(pos=(100, 420), lim=(280, 580), hp=5)
+            player = Player(pos=(100, 420), lim=(230, 640), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(800, 420), lim=(280, 580), hb=(200, 500))
+            gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(180, 680), hb=(200, 500))
             gksr_projectiles = []
 
             powerup_pickups = []
@@ -611,14 +646,14 @@ def main():
                 player.update(delta_time, 0)
             
             if keys[pygame.K_SPACE] and player.can_shoot():
-                player_projectiles.append(Projectile(pos=player.hitbox_rect.center, dir=1))
+                player_projectiles.append(OldProjectile(pos=player.hitbox_rect.center, dir=1))
                 player.time_since_last_shoot = 0
         
             gksr.update(delta_time)
             if gksr.can_shoot():
                 positions = choose_gksr_projectiles_origins(gksr)
                 for position in positions:
-                    gksr_projectiles.append(Projectile(path='test_images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
+                    gksr_projectiles.append(OldProjectile(path='test_images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
                 
                 chance = 20
                 random_num = random.randint(1, 100)
