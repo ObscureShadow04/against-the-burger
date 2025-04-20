@@ -241,6 +241,28 @@ class GiantKillerSpaceRobot(Character):
         super().draw(screen)
         self.hitpoints_bar.draw(screen)
 
+class Blast():
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20)):
+        self.pos_x, self.pos_y = pos
+        
+        self.hitbox_rect = pygame.Rect((0, 0), hb)
+        self.hitbox_rect.center = self.position_vector()
+        
+        self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
+
+        self.lifetime = 0
+        self.lifespan = self.sprite.image_replace_time * self.sprite.num_images
+
+    def position_vector(self):
+        return (self.pos_x, self.pos_y)
+    
+    def should_die(self):
+        return self.lifetime >= self.lifespan
+    
+    def update(self, dt=0):
+        self.lifetime += dt
+        self.sprite.update(dt, self.position_vector)
+
 class MovingObject():
     def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0):
         self.pos_x, self.pos_y = pos
@@ -268,13 +290,27 @@ class MovingObject():
     def update(self, dt=0):        
         self.onscreen = self._is_onscreen()
         if self.onscreen:
-            self._adjust_position
-        self.sprite.update(dt, self.position_vector())
+            self._adjust_position(dt)
+            self.sprite.update(dt, self.position_vector())
     
     def check_hit(self, rect):
         return self.hitbox_rect.colliderect(rect)
+    
+    def draw(self, screen):
+        self.sprite.draw(screen)
 
+class Projectile(MovingObject):
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0, dmg=0, blast_details=(('', 3, 12), (0, 0), (20, 20))):
+        super().__init__(sprite_details, pos, hb, s, dir)
 
+        self.damage = dmg
+
+class PowerUp(MovingObject):
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=-1, c=1, dur=5):
+        super().__init__(sprite_details, pos, hb, s, dir)
+
+        self.code = c
+        self.duration = dur
 
 class GameObject():
     def __init__(self):
@@ -566,9 +602,9 @@ def update_projectile_group(projectiles, delta_time, target):
     return new_projectiles
 
 def spawn_powerup():
-    powerup_sprites = ['test_images\\powerup_healthpack.png', 'test_images\\powerup_speed.png', 'test_images\\powerup_firerate.png']
+    base_path = 'images\\powerups\\'
     random_num = random.randint(1,3)
-    return OldPowerUp(path=powerup_sprites[random_num - 1],code=random_num)
+    return PowerUp((f'{base_path}{random_num}\\', 3, 12), (800, 420), c=random_num)
 
 def main():
     FRAMES_PER_SECOND = 60
@@ -646,14 +682,14 @@ def main():
                 player.update(delta_time, 0)
             
             if keys[pygame.K_SPACE] and player.can_shoot():
-                player_projectiles.append(OldProjectile(pos=player.hitbox_rect.center, dir=1))
+                player_projectiles.append(Projectile(('images\\player\\projectile\\', 3, 12), player.position_vector(), s=500, dir=1, dmg=1))
                 player.time_since_last_shoot = 0
         
             gksr.update(delta_time)
             if gksr.can_shoot():
                 positions = choose_gksr_projectiles_origins(gksr)
                 for position in positions:
-                    gksr_projectiles.append(OldProjectile(path='test_images\\test_gskr_projectile.png', pos=position, hb=(20,32), s=500, dir=-1))
+                    gksr_projectiles.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, s=500, dir=-1, dmg=1))
                 
                 chance = 20
                 random_num = random.randint(1, 100)
@@ -670,8 +706,8 @@ def main():
                 if powerup.onscreen:
                     powerup.update(delta_time)                    
                     if powerup.check_hit(player.hitbox_rect) and player.active_powerup == 0:
-                        player.active_powerup = powerup.powerup_code
-                        player.powerup_effect_duration = powerup.powerup_duration
+                        player.active_powerup = powerup.code
+                        player.powerup_effect_duration = powerup.duration
                     else:
                         new_powerup_pickups.append(powerup)
             powerup_pickups = new_powerup_pickups
