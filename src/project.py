@@ -395,7 +395,7 @@ def update_player_from_keys(player, keys, dt=0):
     
     player.update(dt, direction)
 
-def choose_gksr_projectiles_origins(gksr):
+def choose_random_gksr_projectiles_origins(gksr):
     positions = []
     while len(positions) < gksr.projectiles_per_wave:
         pos = random.choice(gksr.projectile_origin_positions)
@@ -403,21 +403,60 @@ def choose_gksr_projectiles_origins(gksr):
             positions.append(pos)
     return positions
 
-def update_group(projectiles, delta_time, target):
+def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
+    positions = choose_random_gksr_projectiles_origins(gksr)
+
+    chance = 50
+    random_num = random.randint(1, 100)
+    powerup_will_spawn = False
+    if random_num < chance:
+        powerup_will_spawn = True
+                
+    random_position_index = random.randint(0, len(positions)-1)
+
+    for index, position in enumerate(positions):
+        if index == random_position_index and powerup_will_spawn:
+            powerups_group.append(spawn_powerup(position))
+        else:
+            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, s=500, dir=-1, dmg=1))
+    gksr.time_since_last_shoot = 0
+    return (powerups_group, gksr_projectile_group)
+
+def update_group(projectiles, target, dt=0):
     new_projectiles = []
     for projectile in projectiles:
         if projectile.onscreen:
-            projectile.update(delta_time)                    
+            projectile.update(dt)                    
             if projectile.check_hit(target.hitbox_rect):
                 target.hitpoints -= projectile.damage
             else:
                 new_projectiles.append(projectile)
     return new_projectiles
 
-def spawn_powerup():
+def update_powerups(powerups, target, dt=0):
+    new_powerups = []
+    for powerup in powerups:
+        if powerup.onscreen:
+            powerup.update(dt)                    
+            if powerup.check_hit(target.hitbox_rect) and target.active_powerup == 0:
+                target.active_powerup = powerup.code
+                target.powerup_effect_duration = powerup.duration
+            else:
+                new_powerups.append(powerup)
+    return new_powerups
+
+def spawn_powerup(position):
     base_path = 'images\\powerups\\'
     random_num = random.randint(1,3)
-    return PowerUp((f'{base_path}{random_num}\\', 3, 12), (800, 420), c=random_num)
+    return PowerUp((f'{base_path}{random_num}\\', 3, 12), position, c=random_num)
+
+def update_blasts(blasts, dt=0):
+    new_blasts = []
+    for blast in blasts:
+        blast.update(dt)
+        if not blast.should_die():
+            new_blasts.append(blast)
+    return blasts
 
 def main():
     FRAMES_PER_SECOND = 60
@@ -465,10 +504,7 @@ def main():
             running = False
         
         if game_phase == 1:
-            #test_player.update(delta_time)
-
             title_card.draw(screen)
-            #test_player.draw(screen)
 
             if keys[pygame.K_SPACE]:
                 game_phase += 1
@@ -476,10 +512,10 @@ def main():
             player = Player(pos=(100, 420), lim=(230, 640), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(180, 680), hb=(200, 500))
+            gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(230, 640), hb=(200, 500))
             gksr_projectiles = []
 
-            powerup_pickups = []
+            powerups = []
             blasts = []
 
             game_end_scenario = 0
@@ -492,45 +528,19 @@ def main():
             time_bar.update(time_left)
 
             update_player_from_keys(player, keys, delta_time)
-            
             if keys[pygame.K_SPACE] and player.can_shoot():
                 player_projectiles.append(Projectile(('images\\player\\projectile\\', 3, 12), player.position_vector(), s=500, dir=1, dmg=1))
                 player.time_since_last_shoot = 0
         
             gksr.update(delta_time)
             if gksr.can_shoot():
-                positions = choose_gksr_projectiles_origins(gksr)
-                for position in positions:
-                    gksr_projectiles.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, s=500, dir=-1, dmg=1))
-                
-                chance = 20
-                random_num = random.randint(1, 100)
-                if random_num < chance:
-                    powerup_pickups.append(spawn_powerup())
+                powerups, gksr_projectiles = gksr_fire_projectile_wave(gksr, powerups, gksr_projectiles)
 
-                gksr.time_since_last_shoot = 0
+            player_projectiles = update_group(player_projectiles, gksr, delta_time)
+            gksr_projectiles = update_group(gksr_projectiles, player, delta_time)
 
-            player_projectiles = update_group(player_projectiles, delta_time, gksr)
-            gksr_projectiles = update_group(gksr_projectiles, delta_time, player)
-
-            new_powerup_pickups = []
-            for powerup in powerup_pickups:
-                if powerup.onscreen:
-                    powerup.update(delta_time)                    
-                    if powerup.check_hit(player.hitbox_rect) and player.active_powerup == 0:
-                        player.active_powerup = powerup.code
-                        player.powerup_effect_duration = powerup.duration
-                        blasts.append(Blast(('images\\player\\blast\\', 6, 12), powerup.position_vector()))
-                    else:
-                        new_powerup_pickups.append(powerup)
-            powerup_pickups = new_powerup_pickups
-
-            new_blasts = []
-            for blast in blasts:
-                blast.update(delta_time)
-                if not blast.should_die():
-                    new_blasts.append(blast)
-            blasts = new_blasts
+            powerups = update_powerups(powerups, player, delta_time)
+            blasts = update_blasts(blasts)
 
     
             screen.fill(pygame.Color(16, 0, 26))
@@ -547,7 +557,7 @@ def main():
             for projectile in gksr_projectiles:
                 projectile.draw(screen)
             
-            for powerup in powerup_pickups:
+            for powerup in powerups:
                 powerup.draw(screen)
 
             for blast in blasts:
