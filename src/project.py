@@ -190,10 +190,11 @@ class Player(Character):
         self.hitpoints_bar.draw(screen)
 
 class GiantKillerSpaceRobot(Character):
-    def __init__(self, sprite_details=('images\\gksr\\phase1\\character\\', 4, 12), pos=(0, 0), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=100, s=0, cdt=2.0, ppw=4, po=10):
+    def __init__(self, sprite_details=('images\\gksr\\phase1\\character\\', 4, 12), pos=(0, 0), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=100, s=0, cdt=2.0, ppw=5, po=10):
         super().__init__(sprite_details, pos, lim, hb, hp, s, cdt)
         self.attack_phase = 1
         self.projectiles_per_wave = ppw
+        self.powerup_drop_chance = 10
 
         self.projectile_origin_positions = []
         firing_range = lim
@@ -218,14 +219,17 @@ class GiantKillerSpaceRobot(Character):
     
     def _manage_self_from_attack_phase(self):
         if self.attack_phase == 1:
-            self.projectiles_per_wave = 4
-            self.cooldown_time = 2.0
-        elif self.attack_phase == 2:
             self.projectiles_per_wave = 5
-            self.cooldown_time = 1.5
-        if self.attack_phase == 3:
+            self.cooldown_time = 2.0
+            self.powerup_drop_chance = 10
+        elif self.attack_phase == 2:
             self.projectiles_per_wave = 6
+            self.cooldown_time = 1.5
+            self.powerup_drop_chance = 30
+        if self.attack_phase == 3:
+            self.projectiles_per_wave = 7
             self.cooldown_time = 1.0
+            self.powerup_drop_chance = 50
 
     def update(self, dt=0):
         super().update(dt, 0)
@@ -397,7 +401,7 @@ def choose_random_gksr_projectiles_origins(gksr):
 def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
     positions = choose_random_gksr_projectiles_origins(gksr)
 
-    chance = 20
+    chance = gksr.powerup_drop_chance
     random_num = random.randint(1, 100)
     powerup_will_spawn = False
     if random_num < chance:
