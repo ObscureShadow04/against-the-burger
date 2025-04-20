@@ -261,7 +261,10 @@ class Blast():
     
     def update(self, dt=0):
         self.lifetime += dt
-        self.sprite.update(dt, self.position_vector)
+        self.sprite.update(dt, self.position_vector())
+    
+    def draw(self, screen):
+        self.sprite.draw(screen)
 
 class MovingObject():
     def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0):
@@ -623,6 +626,8 @@ def main():
     gksr = OldGiantKillerSpaceRobot(y_range=(280, 550))
     gksr_projectiles = []
 
+    blasts = []
+
     time_left = 60.0
     time_bar = MeterBar(pos=(640, 20), dims=(500, 20), sm=2, col='Purple', amt=time_left)
 
@@ -708,9 +713,18 @@ def main():
                     if powerup.check_hit(player.hitbox_rect) and player.active_powerup == 0:
                         player.active_powerup = powerup.code
                         player.powerup_effect_duration = powerup.duration
+                        blasts.append(Blast(('images\\player\\blast\\', 6, 12), powerup.position_vector()))
                     else:
                         new_powerup_pickups.append(powerup)
             powerup_pickups = new_powerup_pickups
+
+            new_blasts = []
+            for blast in blasts:
+                blast.update(delta_time)
+                if not blast.should_die():
+                    new_blasts.append(blast)
+            blasts = new_blasts
+
     
             screen.fill(pygame.Color(16, 0, 26))
             ui_background_bar.draw(screen)
@@ -728,6 +742,9 @@ def main():
             
             for powerup in powerup_pickups:
                 powerup.draw(screen)
+
+            for blast in blasts:
+                blast.draw(screen)
 
             time_left -= delta_time
             
