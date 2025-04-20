@@ -303,10 +303,11 @@ class MovingObject():
         self.sprite.draw(screen)
 
 class Projectile(MovingObject):
-    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0, dmg=0, blast_details=(('', 3, 12), (0, 0), (20, 20))):
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0, dmg=0, bd=(('', 3, 12), (0, 0), (20, 20))):
         super().__init__(sprite_details, pos, hb, s, dir)
 
         self.damage = dmg
+        self.blast_details = bd
 
 class PowerUp(MovingObject):
     def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=-1, c=1, dur=5):
@@ -395,6 +396,11 @@ def update_player_from_keys(player, keys, dt=0):
     
     player.update(dt, direction)
 
+def player_shoot(player, player_projectiles):
+    blast_details = ((f'images\\player\\blast\\', 6, 12), (0, 0), (1, 1))
+    player_projectiles.append(Projectile(('images\\player\\projectile\\', 3, 12), player.position_vector(), s=500, dir=1, dmg=1, bd=blast_details))
+    player.time_since_last_shoot = 0
+
 def choose_random_gksr_projectiles_origins(gksr):
     positions = []
     while len(positions) < gksr.projectiles_per_wave:
@@ -418,20 +424,23 @@ def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
         if index == random_position_index and powerup_will_spawn:
             powerups_group.append(spawn_powerup(position))
         else:
-            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, s=500, dir=-1, dmg=1))
+            blast_details = ((f'images\\gksr\\phase{gksr.attack_phase}\\blast\\', 8, 12), (0, 0), (1, 1))
+            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, s=500, dir=-1, dmg=1, bd=blast_details))
     gksr.time_since_last_shoot = 0
     return (powerups_group, gksr_projectile_group)
 
-def update_group(projectiles, target, dt=0):
+def update_projectiles(projectiles, target, blasts, dt=0):
     new_projectiles = []
     for projectile in projectiles:
         if projectile.onscreen:
             projectile.update(dt)                    
             if projectile.check_hit(target.hitbox_rect):
                 target.hitpoints -= projectile.damage
+                blast_details = projectile.blast_details
+                blasts.append(Blast(blast_details[0], projectile.position_vector(), blast_details[2]))
             else:
                 new_projectiles.append(projectile)
-    return new_projectiles
+    return (new_projectiles, blasts)
 
 def update_powerups(powerups, target, dt=0):
     new_powerups = []
@@ -456,7 +465,7 @@ def update_blasts(blasts, dt=0):
         blast.update(dt)
         if not blast.should_die():
             new_blasts.append(blast)
-    return blasts
+    return new_blasts
 
 def main():
     FRAMES_PER_SECOND = 60
@@ -529,20 +538,18 @@ def main():
 
             update_player_from_keys(player, keys, delta_time)
             if keys[pygame.K_SPACE] and player.can_shoot():
-                player_projectiles.append(Projectile(('images\\player\\projectile\\', 3, 12), player.position_vector(), s=500, dir=1, dmg=1))
-                player.time_since_last_shoot = 0
+                player_shoot(player, player_projectiles)
         
             gksr.update(delta_time)
             if gksr.can_shoot():
                 powerups, gksr_projectiles = gksr_fire_projectile_wave(gksr, powerups, gksr_projectiles)
 
-            player_projectiles = update_group(player_projectiles, gksr, delta_time)
-            gksr_projectiles = update_group(gksr_projectiles, player, delta_time)
+            player_projectiles, blasts = update_projectiles(player_projectiles, gksr, blasts, delta_time)
+            gksr_projectiles, blasts = update_projectiles(gksr_projectiles, player, blasts, delta_time)
 
             powerups = update_powerups(powerups, player, delta_time)
-            blasts = update_blasts(blasts)
+            blasts = update_blasts(blasts, delta_time)
 
-    
             screen.fill(pygame.Color(16, 0, 26))
             ui_background_bar.draw(screen)
 
