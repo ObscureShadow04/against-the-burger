@@ -316,22 +316,6 @@ class PowerUp(MovingObject):
         self.code = c
         self.duration = dur
 
-class GameObject():
-    def __init__(self):
-        self.image = pygame.Surface((10, 10))
-        self.image.fill('White')
-
-        self.pos_x, self.pos_y = (5, 5)
-        
-        self.draw_rect = pygame.Rect((0, 0), (10, 10))
-        self.draw_rect.center = (self.pos_x, self.pos_y)
-
-    def update(self):
-        return
-        
-    def draw(self, screen):
-        screen.blit(self.image, self.draw_rect)
-
 class StaticImage():
     def __init__(self, path='test_images\\test_UI_bar.png', pos=(0, 0)):
         self.image = pygame.image.load(path).convert_alpha()
@@ -395,6 +379,7 @@ def update_player_from_keys(player, keys, dt=0):
         direction = 0
     
     player.update(dt, direction)
+    return direction
 
 def player_shoot(player, player_projectiles):
     blast_details = ((f'images\\player\\blast\\', 6, 12), (0, 0), (1, 1))
@@ -412,7 +397,7 @@ def choose_random_gksr_projectiles_origins(gksr):
 def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
     positions = choose_random_gksr_projectiles_origins(gksr)
 
-    chance = 50
+    chance = 20
     random_num = random.randint(1, 100)
     powerup_will_spawn = False
     if random_num < chance:
@@ -425,7 +410,7 @@ def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
             powerups_group.append(spawn_powerup(position))
         else:
             blast_details = ((f'images\\gksr\\phase{gksr.attack_phase}\\blast\\', 8, 12), (0, 0), (1, 1))
-            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, s=500, dir=-1, dmg=1, bd=blast_details))
+            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, hb=(32, 32), s=500, dir=-1, dmg=1, bd=blast_details))
     gksr.time_since_last_shoot = 0
     return (powerups_group, gksr_projectile_group)
 
@@ -518,10 +503,10 @@ def main():
             if keys[pygame.K_SPACE]:
                 game_phase += 1
         elif game_phase == 2:
-            player = Player(pos=(100, 420), lim=(230, 640), hp=5)
+            player = Player(pos=(100, 420), lim=(230, 640), hb=(40, 40), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(230, 640), hb=(200, 500))
+            gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(180, 610), hb=(200, 500), po=8)
             gksr_projectiles = []
 
             powerups = []
@@ -536,8 +521,8 @@ def main():
         elif game_phase == 3:
             time_bar.update(time_left)
 
-            update_player_from_keys(player, keys, delta_time)
-            if keys[pygame.K_SPACE] and player.can_shoot():
+            direction = update_player_from_keys(player, keys, delta_time)
+            if keys[pygame.K_SPACE] and player.can_shoot() and direction == 0:
                 player_shoot(player, player_projectiles)
         
             gksr.update(delta_time)
@@ -582,13 +567,6 @@ def main():
             if game_end_scenario != 0:
                 game_phase += 1
         else:
-            # display a win or lose screen depending on the value of game_end_scenario
-            # prompt the user to either:
-            # press space to try again
-            # press escape to quit
-            # ^^^ depending on which of these happen:
-            # set gamephase to 2 if the user presses space
-            # do nothing if the player presses escape, since that's already taken care of farther above.
             if game_end_scenario == 1:
                 victory_card.draw(screen)
             elif game_end_scenario == 2 or game_end_scenario == 3:
