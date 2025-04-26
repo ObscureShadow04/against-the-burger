@@ -1,8 +1,8 @@
 import pygame
 import random
 
-DISPLAY_WIDTH, DISPLAY_HEIGHT = (1280, 720)
-UNIVERSAL_SPRITE_SCALE = 2.0
+DISPLAY_WIDTH, DISPLAY_HEIGHT = (1920, 1080)
+UNIVERSAL_SPRITE_SCALE = 3.0
 
 class Sprite():
     def __init__(self, path='', pos=(0, 0), dims=(10, 10), col=pygame.Color('White')):
@@ -142,7 +142,7 @@ class Player(Character):
         self.powerup_active_speed = self.speed * 2
         self.powerup_active_shoot_cooldown_time = self.shoot_cooldown_time * 0.5
 
-        self.hitpoints_bar = MeterBar(pos=(30, 50), dims=(200, 20), sm=0, col='Blue', amt=self.hitpoints)
+        self.hitpoints_bar = MeterBar(pos=(45, 75), dims=(300, 30), sm=0, col='Blue', amt=self.hitpoints)
     
     def _configure_self_from_powerups(self):
         current_speed = self.speed
@@ -200,9 +200,9 @@ class GiantKillerSpaceRobot(Character):
         firing_range = lim
         origin_amounts = po
         for x in range(origin_amounts):
-            self.projectile_origin_positions.append((900, firing_range[0] + (((firing_range[1] - firing_range[0]) / origin_amounts) * (x + 1))))
+            self.projectile_origin_positions.append((1350, firing_range[0] + (((firing_range[1] - firing_range[0]) / origin_amounts) * (x + 1))))
         
-        self.hitpoints_bar = MeterBar(pos=(1230, 50), dims=(200, 20), sm=1, col='Red', amt=self.hitpoints)
+        self.hitpoints_bar = MeterBar(pos=(1845, 75), dims=(300, 30), sm=1, col='Red', amt=self.hitpoints)
     
     def _manage_attack_phase(self):
         health_percent = self.hitpoints / self.max_hitpoints
@@ -387,7 +387,7 @@ def update_player_from_keys(player, keys, dt=0):
 
 def player_shoot(player, player_projectiles):
     blast_details = ((f'images\\player\\blast\\', 6, 12), (0, 0), (1, 1))
-    player_projectiles.append(Projectile(('images\\player\\projectile\\', 3, 12), player.position_vector(), s=500, dir=1, dmg=1, bd=blast_details))
+    player_projectiles.append(Projectile(('images\\player\\projectile\\', 3, 12), player.position_vector(), s=900, dir=1, dmg=1, bd=blast_details))
     player.time_since_last_shoot = 0
 
 def choose_random_gksr_projectiles_origins(gksr):
@@ -414,7 +414,7 @@ def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
             powerups_group.append(spawn_powerup(position))
         else:
             blast_details = ((f'images\\gksr\\phase{gksr.attack_phase}\\blast\\', 8, 12), (0, 0), (1, 1))
-            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, hb=(32, 32), s=500, dir=-1, dmg=1, bd=blast_details))
+            gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, hb=(48, 48), s=750, dir=-1, dmg=1, bd=blast_details))
     gksr.time_since_last_shoot = 0
     return (powerups_group, gksr_projectile_group)
 
@@ -446,7 +446,7 @@ def update_powerups(powerups, target, dt=0):
 def spawn_powerup(position):
     base_path = 'images\\powerups\\'
     random_num = random.randint(1,3)
-    return PowerUp((f'{base_path}{random_num}\\', 3, 12), position, c=random_num)
+    return PowerUp((f'{base_path}{random_num}\\', 3, 12), position, s=300, c=random_num)
 
 def update_blasts(blasts, dt=0):
     new_blasts = []
@@ -467,17 +467,17 @@ def main():
     clock = pygame.time.Clock()
     delta_time = 0
 
-    player = Player(pos=(100, 420), lim=(230, 640), hp=5)
+    player = Player(pos=(150, 630), lim=(345, 960), hp=5)
     player_projectiles = []
 
-    gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(180, 680), hb=(200, 500))
+    gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 1020), hb=(300, 750))
     gksr_projectiles = []
 
     powerup_pickups = []
     blasts = []
 
     time_left = 60.0
-    time_bar = MeterBar(pos=(640, 20), dims=(500, 20), sm=2, col='Purple', amt=time_left)
+    time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
     powerup_pickups = []
 
@@ -507,10 +507,10 @@ def main():
             if keys[pygame.K_SPACE]:
                 game_phase += 1
         elif game_phase == 2:
-            player = Player(pos=(100, 420), lim=(230, 640), hb=(40, 40), hp=5)
+            player = Player(pos=(150, 630), lim=(345, 960), hb=(60, 60), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(1050, 420), lim=(180, 610), hb=(200, 500), po=8)
+            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 990), hb=(300, 750), po=8)
             gksr_projectiles = []
 
             powerups = []
@@ -519,7 +519,7 @@ def main():
             game_end_scenario = 0
             
             time_left = 60.0
-            time_bar = MeterBar(pos=(640, 20), dims=(500, 20), sm=2, col='Purple', amt=time_left)
+            time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
             game_phase +=1
         elif game_phase == 3:
@@ -540,7 +540,8 @@ def main():
             blasts = update_blasts(blasts, delta_time)
 
             screen.fill(pygame.Color(16, 0, 26))
-            ui_background_bar.draw(screen)
+            #ui_background_bar.draw(screen)
+            pygame.draw.rect(screen, "Grey", pygame.Rect((0, 0), (DISPLAY_WIDTH, 180)))
 
             time_bar.draw(screen)
             
