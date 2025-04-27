@@ -473,7 +473,7 @@ def generate_star(x_range=(0, DISPLAY_WIDTH), y_range=(0, DISPLAY_HEIGHT), x_lim
     random_num = random.randint(1, 3)
 
     STAR_SIZE_CONSTANT = 3
-    size = STAR_SIZE_CONSTANT * random_num
+    size = STAR_SIZE_CONSTANT #* random_num
 
     STAR_SPEED_CONSTANT = 100
     speed = STAR_SPEED_CONSTANT * random_num
@@ -483,11 +483,19 @@ def generate_star(x_range=(0, DISPLAY_WIDTH), y_range=(0, DISPLAY_HEIGHT), x_lim
     return Star(sprite_details, position, s=speed, dir=1, x_lim=x_limit)
 
 def update_stars(stars, dt=0):
+    stars_removed = 0
+
     new_stars = []
     for star in stars:
         if star.onscreen:
             star.update(dt)                    
             new_stars.append(star)
+        else:
+            stars_removed += 1
+    
+    for number in range(0, stars_removed, 1):
+        new_stars.append(generate_star(x_range=(-64, -16)))
+
     return new_stars
 
 def main():
