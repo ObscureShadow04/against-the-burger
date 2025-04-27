@@ -133,7 +133,7 @@ class Character():
         self.sprite.draw(screen)   
 
 class Player(Character):
-    def __init__(self, sprite_details=('images\\player\\character\\', 4, 12), pos=(0, 0), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=200, cdt=0.5):
+    def __init__(self, sprite_details=('images\\player\\character\\', 4, 12), pos=(0, 0), lim=(0, DISPLAY_HEIGHT), hb=(20, 20), hp=5, s=300, cdt=0.5):
         super().__init__(sprite_details, pos, lim, hb, hp, s, cdt)
 
         self.powerup_effect_duration = 0.0
@@ -277,7 +277,11 @@ class MovingObject():
         self.hitbox_rect = pygame.Rect((0, 0), hb)
         self.hitbox_rect.center = self.position_vector()
 
-        self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
+        self.sprite = None
+        if sprite_details[1] != '':
+            self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
+        else:
+            self.sprite = Sprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
 
         self.speed = s
         self.direction = dir
@@ -505,7 +509,7 @@ def main():
             player = Player(pos=(150, 630), lim=(345, 960), hb=(60, 60), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 990), hb=(300, 750), po=8)
+            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 910), hb=(300, 750), po=8)
             gksr_projectiles = []
 
             powerups = []
