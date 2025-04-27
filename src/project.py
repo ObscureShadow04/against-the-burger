@@ -317,6 +317,21 @@ class Projectile(MovingObject):
         self.damage = dmg
         self.blast_details = bd
 
+class Star(MovingObject):
+    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0, x_lim=DISPLAY_WIDTH+50):
+        super().__init__(sprite_details, pos, hb, s, dir)
+
+        self.x_limit = x_lim
+    
+    def _is_onscreen(self):
+        return self.pos_x < self.x_limit
+
+    def update(self, dt=0):
+        self.onscreen = self._is_onscreen()
+        if self.onscreen:
+            self._adjust_position(dt)
+            self.sprite.set_position(self.position_vector())
+
 class PowerUp(MovingObject):
     def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=-1, c=1, dur=5):
         super().__init__(sprite_details, pos, hb, s, dir)
@@ -451,6 +466,10 @@ def update_blasts(blasts, dt=0):
             new_blasts.append(blast)
     return new_blasts
 
+def generate_star():
+    
+    pass
+
 def main():
     FRAMES_PER_SECOND = 60
     
@@ -470,6 +489,8 @@ def main():
 
     powerup_pickups = []
     blasts = []
+
+    stars = []
 
     time_left = 60.0
     time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
