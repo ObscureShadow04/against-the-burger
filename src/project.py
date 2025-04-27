@@ -278,7 +278,7 @@ class MovingObject():
         self.hitbox_rect.center = self.position_vector()
 
         self.sprite = None
-        if sprite_details[1] != '':
+        if sprite_details[0] != '':
             self.sprite = AnimatedSprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
         else:
             self.sprite = Sprite(sprite_details[0], pos, sprite_details[1], sprite_details[2])
@@ -466,9 +466,21 @@ def update_blasts(blasts, dt=0):
             new_blasts.append(blast)
     return new_blasts
 
-def generate_star():
-    
-    pass
+def generate_star(x_range=(0, DISPLAY_WIDTH), y_range=(0, DISPLAY_HEIGHT), x_limit=DISPLAY_WIDTH+50):
+    position = (random.randint(x_range[0], x_range[1]), random.randint(y_range[0], y_range[1]))
+    color = pygame.Color(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+    random_num = random.randint(1, 5)
+
+    STAR_SIZE_CONSTANT = 4
+    size = STAR_SIZE_CONSTANT * random_num
+
+    STAR_SPEED_CONSTANT = 20
+    speed = STAR_SPEED_CONSTANT * random_num
+
+    sprite_details = ('', position, (size, size), color)
+
+    return Star(sprite_details, position, s=speed, dir=1, x_lim=x_limit)
 
 def main():
     FRAMES_PER_SECOND = 60
@@ -490,6 +502,7 @@ def main():
     powerup_pickups = []
     blasts = []
 
+    star_count = 300
     stars = []
 
     time_left = 60.0
@@ -500,14 +513,8 @@ def main():
     game_phase = 1
     game_end_scenario = 0
 
-    #title_card = StaticImage(path='test_images\\title_card.png')
-    #game_over_card = StaticImage(path='test_images\\game_over_card.png')
-    #victory_card = StaticImage(path='test_images\\victory_card.png')
-    #ui_background_bar = StaticImage()
-
-    #test_player = GiantKillerSpaceRobot(pos=(300, 400))
-
     center_vector = (DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2)
+
     title_screen = Sprite(path='images\\title.png', pos=center_vector)
     end_screen = Sprite(path='')    
 
@@ -536,6 +543,10 @@ def main():
             powerups = []
             blasts = []
 
+            stars = []
+            for num in range(0, star_count, 1):
+                stars.append(generate_star())
+
             game_end_scenario = 0
             
             time_left = 60.0
@@ -560,6 +571,8 @@ def main():
             powerups = update_powerups(powerups, player, delta_time)
             blasts = update_blasts(blasts, delta_time)
 
+            #stars = update_stars(stars)
+
             screen.fill(pygame.Color(32, 0, 54))
             #ui_background_bar.draw(screen)
             pygame.draw.rect(screen, "Grey", pygame.Rect((0, 0), (DISPLAY_WIDTH, 180)))
@@ -580,6 +593,9 @@ def main():
 
             for blast in blasts:
                 blast.draw(screen)
+            
+            #for star in stars:
+            #    star.draw(screen)
 
             time_left -= delta_time
             
