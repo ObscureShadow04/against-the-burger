@@ -318,7 +318,7 @@ class Projectile(MovingObject):
         self.blast_details = bd
 
 class Star(MovingObject):
-    def __init__(self, sprite_details=('', 3, 12), pos=(0, 0), hb=(20, 20), s=200, dir=0, x_lim=DISPLAY_WIDTH+50):
+    def __init__(self, sprite_details=('', (4, 4), pygame.Color('White')), pos=(0, 0), hb=(20, 20), s=200, dir=0, x_lim=DISPLAY_WIDTH+50):
         super().__init__(sprite_details, pos, hb, s, dir)
 
         self.x_limit = x_lim
@@ -468,19 +468,27 @@ def update_blasts(blasts, dt=0):
 
 def generate_star(x_range=(0, DISPLAY_WIDTH), y_range=(0, DISPLAY_HEIGHT), x_limit=DISPLAY_WIDTH+50):
     position = (random.randint(x_range[0], x_range[1]), random.randint(y_range[0], y_range[1]))
-    color = pygame.Color(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    color = pygame.Color('White') #pygame.Color(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
-    random_num = random.randint(1, 5)
+    random_num = random.randint(1, 3)
 
-    STAR_SIZE_CONSTANT = 4
+    STAR_SIZE_CONSTANT = 3
     size = STAR_SIZE_CONSTANT * random_num
 
-    STAR_SPEED_CONSTANT = 20
+    STAR_SPEED_CONSTANT = 100
     speed = STAR_SPEED_CONSTANT * random_num
 
-    sprite_details = ('', position, (size, size), color)
+    sprite_details = ('', (size, size), color)
 
     return Star(sprite_details, position, s=speed, dir=1, x_lim=x_limit)
+
+def update_stars(stars, dt=0):
+    new_stars = []
+    for star in stars:
+        if star.onscreen:
+            star.update(dt)                    
+            new_stars.append(star)
+    return new_stars
 
 def main():
     FRAMES_PER_SECOND = 60
@@ -571,10 +579,13 @@ def main():
             powerups = update_powerups(powerups, player, delta_time)
             blasts = update_blasts(blasts, delta_time)
 
-            #stars = update_stars(stars)
+            stars = update_stars(stars, delta_time)
 
             screen.fill(pygame.Color(32, 0, 54))
-            #ui_background_bar.draw(screen)
+
+            for star in stars:
+                star.draw(screen)
+            
             pygame.draw.rect(screen, "Grey", pygame.Rect((0, 0), (DISPLAY_WIDTH, 180)))
 
             time_bar.draw(screen)
@@ -593,9 +604,6 @@ def main():
 
             for blast in blasts:
                 blast.draw(screen)
-            
-            #for star in stars:
-            #    star.draw(screen)
 
             time_left -= delta_time
             
