@@ -320,15 +320,6 @@ class PowerUp(MovingObject):
         self.code = c
         self.duration = dur
 
-class StaticImage():
-    def __init__(self, path='test_images\\test_UI_bar.png', pos=(0, 0)):
-        self.image = pygame.image.load(path).convert_alpha()
-        self.draw_rect = self.image.get_rect()
-        self.draw_rect.topleft = pos
-    
-    def draw(self, screen):
-        screen.blit(self.image, self.draw_rect)
-
 class MeterBar():
     def __init__(self, pos=(0, 0), dims=(250, 50), sm=0, col='White', amt=100):
         self.position = pos
@@ -484,12 +475,16 @@ def main():
     game_phase = 1
     game_end_scenario = 0
 
-    title_card = StaticImage(path='test_images\\title_card.png')
-    game_over_card = StaticImage(path='test_images\\game_over_card.png')
-    victory_card = StaticImage(path='test_images\\victory_card.png')
-    ui_background_bar = StaticImage()
+    #title_card = StaticImage(path='test_images\\title_card.png')
+    #game_over_card = StaticImage(path='test_images\\game_over_card.png')
+    #victory_card = StaticImage(path='test_images\\victory_card.png')
+    #ui_background_bar = StaticImage()
 
     #test_player = GiantKillerSpaceRobot(pos=(300, 400))
+
+    center_vector = (DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2)
+    title_screen = Sprite(path='images\\title.png', pos=center_vector)
+    end_screen = Sprite(path='')    
 
     running = True
     while running:
@@ -502,7 +497,7 @@ def main():
             running = False
         
         if game_phase == 1:
-            title_card.draw(screen)
+            title_screen.draw(screen)
 
             if keys[pygame.K_SPACE]:
                 game_phase += 1
@@ -521,6 +516,7 @@ def main():
             time_left = 60.0
             time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
+            end_screen = Sprite(path='') 
             game_phase +=1
         elif game_phase == 3:
             time_bar.update(time_left)
@@ -539,7 +535,7 @@ def main():
             powerups = update_powerups(powerups, player, delta_time)
             blasts = update_blasts(blasts, delta_time)
 
-            screen.fill(pygame.Color(16, 0, 26))
+            screen.fill(pygame.Color(32, 0, 54))
             #ui_background_bar.draw(screen)
             pygame.draw.rect(screen, "Grey", pygame.Rect((0, 0), (DISPLAY_WIDTH, 180)))
 
@@ -572,12 +568,10 @@ def main():
             if game_end_scenario != 0:
                 game_phase += 1
         else:
-            if game_end_scenario == 1:
-                victory_card.draw(screen)
-            elif game_end_scenario == 2 or game_end_scenario == 3:
-                game_over_card.draw(screen)
+            end_screen = Sprite(path=f'images\\endings\\game_end_{game_end_scenario}.png', pos=center_vector)
+            end_screen.draw(screen)
 
-            if keys[pygame.K_LSHIFT]:
+            if keys[pygame.K_RSHIFT]:
                 game_phase = 2
 
         pygame.display.flip()
