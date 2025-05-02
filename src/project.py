@@ -143,6 +143,10 @@ class Player(Character):
         self.powerup_active_shoot_cooldown_time = self.shoot_cooldown_time * 0.5
 
         self.hitpoints_bar = MeterBar(pos=(45, 75), dims=(300, 30), sm=0, col='Blue', amt=self.hitpoints)
+
+        self.shoot_sound = pygame.mixer.Sound('sounds\\player_shoot.wav')
+        self.powerup_sound = pygame.mixer.Sound('sounds\\player_pickup_powerup.wav')
+        self.blast_sound = pygame.mixer.Sound('sounds\\player_blast.wav')
     
     def _configure_self_from_powerups(self):
         current_speed = self.speed
@@ -203,6 +207,9 @@ class GiantKillerSpaceRobot(Character):
             self.projectile_origin_positions.append((1350, firing_range[0] + (((firing_range[1] - firing_range[0]) / origin_amounts) * (x + 1))))
         
         self.hitpoints_bar = MeterBar(pos=(1845, 75), dims=(300, 30), sm=1, col='Red', amt=self.hitpoints)
+
+        self.shoot_sound = pygame.mixer.Sound('sounds\\gksr_shoot.wav')
+        self.blast_sound = pygame.mixer.Sound('sounds\\gksr_blast.wav')
     
     def _manage_attack_phase(self):
         health_percent = self.hitpoints / self.max_hitpoints
@@ -425,10 +432,11 @@ def gksr_fire_projectile_wave(gksr, powerups_group, gksr_projectile_group):
         else:
             blast_details = ((f'images\\gksr\\phase{gksr.attack_phase}\\blast\\', 8, 12), (0, 0), (1, 1))
             gksr_projectile_group.append(Projectile((f'images\\gksr\\phase{gksr.attack_phase}\\projectile\\', 3, 12), position, hb=(48, 48), s=750, dir=-1, dmg=1, bd=blast_details))
+    gksr.shoot_sound.play()
     gksr.time_since_last_shoot = 0
     return (powerups_group, gksr_projectile_group)
 
-def update_projectiles(projectiles, target, blasts, dt=0):
+def update_projectiles(projectiles, target, shooter, blasts, dt=0):
     new_projectiles = []
     for projectile in projectiles:
         if projectile.onscreen:
@@ -437,6 +445,7 @@ def update_projectiles(projectiles, target, blasts, dt=0):
                 target.hitpoints -= projectile.damage
                 blast_details = projectile.blast_details
                 blasts.append(Blast(blast_details[0], projectile.position_vector(), blast_details[2]))
+                shooter.blast_sound.play()
             else:
                 new_projectiles.append(projectile)
     return (new_projectiles, blasts)
@@ -449,6 +458,7 @@ def update_powerups(powerups, target, dt=0):
             if powerup.check_hit(target.hitbox_rect) and target.active_powerup == 0:
                 target.active_powerup = powerup.code
                 target.powerup_effect_duration = powerup.duration
+                target.powerup_sound.play()
             else:
                 new_powerups.append(powerup)
     return new_powerups
@@ -475,8 +485,8 @@ def generate_star(x_range=(0, DISPLAY_WIDTH), y_range=(0, DISPLAY_HEIGHT), x_lim
     STAR_SIZE_CONSTANT = 3
     size = STAR_SIZE_CONSTANT #* random_num
 
-    STAR_SPEED_CONSTANT = 100
-    speed = STAR_SPEED_CONSTANT * random_num
+    #STAR_SPEED_CONSTANT = 100
+    speed = random.randint(100, 400) #STAR_SPEED_CONSTANT * random_num
 
     sprite_details = ('', (size, size), color)
 
@@ -503,6 +513,8 @@ def main():
     
     pygame.init()
     pygame.display.set_caption('Impending Doom')
+
+    pygame.mixer.init()
 
     screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
@@ -550,7 +562,7 @@ def main():
             if keys[pygame.K_SPACE]:
                 game_phase += 1
         elif game_phase == 2:
-            player = Player(pos=(150, 630), lim=(345, 960), hb=(60, 60), hp=5)
+            player = Player(pos=(150, 630), lim=(315, 945), hb=(60, 60), hp=5)
             player_projectiles = []
 
             gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 910), hb=(300, 750), po=8)
@@ -575,14 +587,15 @@ def main():
 
             direction = update_player_from_keys(player, keys, delta_time)
             if keys[pygame.K_SPACE] and player.can_shoot() and direction == 0:
+                player.shoot_sound.play()
                 player_shoot(player, player_projectiles)
         
             gksr.update(delta_time)
             if gksr.can_shoot():
                 powerups, gksr_projectiles = gksr_fire_projectile_wave(gksr, powerups, gksr_projectiles)
 
-            player_projectiles, blasts = update_projectiles(player_projectiles, gksr, blasts, delta_time)
-            gksr_projectiles, blasts = update_projectiles(gksr_projectiles, player, blasts, delta_time)
+            player_projectiles, blasts = update_projectiles(player_projectiles, gksr, player, blasts, delta_time)
+            gksr_projectiles, blasts = update_projectiles(gksr_projectiles, player, gksr, blasts, delta_time)
 
             powerups = update_powerups(powerups, player, delta_time)
             blasts = update_blasts(blasts, delta_time)
