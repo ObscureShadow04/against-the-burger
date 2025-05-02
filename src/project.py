@@ -145,8 +145,13 @@ class Player(Character):
         self.hitpoints_bar = MeterBar(pos=(45, 75), dims=(300, 30), sm=0, col='Blue', amt=self.hitpoints)
 
         self.shoot_sound = pygame.mixer.Sound('sounds\\player_shoot.wav')
+        self.shoot_sound.set_volume(0.5)
+
         self.powerup_sound = pygame.mixer.Sound('sounds\\player_pickup_powerup.wav')
+        self.powerup_sound.set_volume(0.5)
+
         self.blast_sound = pygame.mixer.Sound('sounds\\player_blast.wav')
+        self.blast_sound.set_volume(0.3)
     
     def _configure_self_from_powerups(self):
         current_speed = self.speed
@@ -515,6 +520,7 @@ def main():
     pygame.display.set_caption('Impending Doom')
 
     pygame.mixer.init()
+    pygame.mixer.music.load('sounds\\background_music.wav')
 
     screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
@@ -583,6 +589,12 @@ def main():
             end_screen = Sprite(path='') 
             game_phase +=1
         elif game_phase == 3:
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.rewind()
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play()
+                pygame.mixer.music.set_pos(0.9)
+
             time_bar.update(time_left)
 
             direction = update_player_from_keys(player, keys, delta_time)
@@ -638,6 +650,9 @@ def main():
             if game_end_scenario != 0:
                 game_phase += 1
         else:
+            if pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
+            
             end_screen = Sprite(path=f'images\\endings\\game_end_{game_end_scenario}.png', pos=center_vector)
             end_screen.draw(screen)
 
