@@ -415,7 +415,7 @@ class PowerUpIndicator():
         pygame.draw.rect(screen, pygame.Color('Black'), self.draw_rect)
 
         if self.image is not None:
-            screen.blit(self.image, self.draw_rect)
+            self.image.draw(screen)
 
 def update_player_from_keys(player, keys, dt=0):
     direction = None
@@ -612,7 +612,7 @@ def main():
             time_left = 60.0
             time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
-            powerup_indicator = PowerUpIndicator((70, 70))
+            powerup_indicator = PowerUpIndicator((425, 90))
 
             end_screen = Sprite(path='') 
             game_phase +=1
