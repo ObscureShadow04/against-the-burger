@@ -395,6 +395,28 @@ class MeterBar():
         pygame.draw.rect(screen, pygame.Color(self.color).lerp('Black', 0.5), self.background_rect)
         pygame.draw.rect(screen, self.color, self.draw_rect)
 
+class PowerUpIndicator():
+    def __init__(self, pos=(0, 0), dims=(100, 100)):
+        self.draw_rect = pygame.Rect((0, 0), dims)
+        self.draw_rect.center = pos
+
+        self.position_vector = pos
+
+        self.image = None
+        self.powerup_code = 0
+
+    def update(self, new_code=0):
+        if new_code != 0:
+            self.image = Sprite(path=f'images\\powerups\\{new_code}.png', pos=self.position_vector,)
+        else:
+            self.image = None
+    
+    def draw(self, screen):
+        pygame.draw.rect(screen, pygame.Color('Black'), self.draw_rect)
+
+        if self.image is not None:
+            screen.blit(self.image, self.draw_rect)
+
 def update_player_from_keys(player, keys, dt=0):
     direction = None
     if keys[pygame.K_UP] and not keys[pygame.K_DOWN]:
@@ -542,6 +564,8 @@ def main():
     time_left = 60.0
     time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
+    powerup_indicator = PowerUpIndicator((70, 70))
+
     powerup_pickups = []
 
     game_phase = 1
@@ -550,7 +574,9 @@ def main():
     center_vector = (DISPLAY_WIDTH/2, DISPLAY_HEIGHT/2)
 
     title_screen = Sprite(path='images\\title.png', pos=center_vector)
-    end_screen = Sprite(path='')    
+    end_screen = Sprite(path='')
+
+    ui_bar = Sprite(path='images\\ui_bar.png', pos=(center_vector[0], 90))
 
     running = True
     while running:
@@ -586,6 +612,8 @@ def main():
             time_left = 60.0
             time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
+            powerup_indicator = PowerUpIndicator((70, 70))
+
             end_screen = Sprite(path='') 
             game_phase +=1
         elif game_phase == 3:
@@ -601,6 +629,8 @@ def main():
             if keys[pygame.K_SPACE] and player.can_shoot() and direction == 0:
                 player.shoot_sound.play()
                 player_shoot(player, player_projectiles)
+            
+            powerup_indicator.update(player.active_powerup)
         
             gksr.update(delta_time)
             if gksr.can_shoot():
@@ -619,9 +649,11 @@ def main():
             for star in stars:
                 star.draw(screen)
             
-            pygame.draw.rect(screen, "Grey", pygame.Rect((0, 0), (DISPLAY_WIDTH, 180)))
+            ui_bar.draw(screen)
 
             time_bar.draw(screen)
+            
+            powerup_indicator.draw(screen)
             
             gksr.draw(screen)
             player.draw(screen)
