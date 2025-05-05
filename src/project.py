@@ -233,7 +233,7 @@ class GiantKillerSpaceRobot(Character):
         if self.attack_phase == 1:
             self.projectiles_per_wave = 5
             self.cooldown_time = 2.0
-            self.powerup_drop_chance = 10
+            self.powerup_drop_chance = 40
         elif self.attack_phase == 2:
             self.projectiles_per_wave = 6
             self.cooldown_time = 1.5
@@ -241,7 +241,7 @@ class GiantKillerSpaceRobot(Character):
         if self.attack_phase == 3:
             self.projectiles_per_wave = 7
             self.cooldown_time = 1.0
-            self.powerup_drop_chance = 50
+            self.powerup_drop_chance = 20
 
     def update(self, dt=0):
         super().update(dt, 0)
@@ -542,7 +542,7 @@ def main():
     pygame.display.set_caption('Impending Doom')
 
     pygame.mixer.init()
-    pygame.mixer.music.load('sounds\\background_music.wav')
+    pygame.mixer.music.load('sounds\\background_music.mp3')
 
     screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
@@ -561,7 +561,7 @@ def main():
     star_count = 300
     stars = []
 
-    time_left = 60.0
+    time_left = 70.0
     time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
     powerup_indicator = PowerUpIndicator((70, 70))
@@ -597,7 +597,7 @@ def main():
             player = Player(pos=(150, 630), lim=(315, 945), hb=(60, 60), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 910), hb=(300, 750), po=8)
+            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 910), hb=(300, 750), hp=110, po=8)
             gksr_projectiles = []
 
             powerups = []
@@ -609,7 +609,7 @@ def main():
 
             game_end_scenario = 0
             
-            time_left = 60.0
+            time_left = 70.0
             time_bar = MeterBar(pos=(960, 30), dims=(750, 30), sm=2, col='Purple', amt=time_left)
 
             powerup_indicator = PowerUpIndicator((425, 90))
@@ -621,7 +621,6 @@ def main():
                 pygame.mixer.music.rewind()
                 pygame.mixer.music.set_volume(0.5)
                 pygame.mixer.music.play()
-                pygame.mixer.music.set_pos(0.9)
 
             time_bar.update(time_left)
 
