@@ -597,7 +597,7 @@ def main():
             player = Player(pos=(150, 630), lim=(315, 945), hb=(60, 60), hp=5)
             player_projectiles = []
 
-            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 910), hb=(300, 750), hp=110, po=8)
+            gksr = GiantKillerSpaceRobot(pos=(1575, 630), lim=(270, 910), hb=(300, 750), hp=140, po=8)
             gksr_projectiles = []
 
             powerups = []
