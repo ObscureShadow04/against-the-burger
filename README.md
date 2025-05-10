@@ -1,7 +1,7 @@
 # impending-doom
 
 ## Demo
-Demo Video: (FUTURE IVAN: insert video link here>>>) <>
+Demo Video: <https://docs.google.com/presentation/d/1czC6vO1hhIFtTyRtIhtRMDZ7D9ge0V0zTaWBF4rLAtI/edit?usp=sharing>
 
 ## GitHub Repository
 GitHub Repo: <https://github.com/ObscureShadow04/impending-doom.git>
